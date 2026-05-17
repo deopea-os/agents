@@ -1,0 +1,55 @@
+---
+description: Project overview, structure, and usage for the Modal LLM serving infrastructure
+alwaysApply: true
+---
+
+# Modal LLM Serving Infrastructure
+
+Config-driven infrastructure for deploying OpenAI-compatible LLM inference endpoints on [Modal](https://modal.com/) using vLLM.
+
+## Project Structure
+
+```
+agents/
+  main.py              # Thin CLI entrypoint (parses --config, wires up Modal app)
+  configs/             # Per-model YAML configs (one file per deployment)
+    gemma4_26b.yaml    # Example: Gemma 4 26B on H200
+    _example.yaml      # Annotated template for adding new models
+  models/              # Core Python package
+    config.py          # Pydantic schema -- validates YAML at load time
+    image.py           # Modal container Image factory (vLLM, future SGLang)
+    server.py          # Modal App factory + vLLM command builder
+    health.py          # Health check local_entrypoint
+```
+
+## How It Works
+
+1. User specifies a config: `modal deploy main.py -- --config gemma4_26b`
+2. `main.py` loads `configs/gemma4_26b.yaml` and validates via Pydantic
+3. `models/server.py` builds the Modal App with GPU, volumes, and vLLM command
+4. Modal deploys the container with an OpenAI-compatible API endpoint
+
+## Key Commands
+
+```bash
+modal deploy main.py -- --config <name>   # Deploy to Modal
+modal run main.py -- --config <name>      # Spin up + health check
+MODEL_CONFIG=<name> modal deploy main.py  # Alternative via env var
+```
+
+## Adding a New Model
+
+1. Create `configs/<model_name>.yaml` (only `model.name` is required; see `_example.yaml`)
+2. Deploy with `modal deploy main.py -- --config <model_name>`
+
+## Editing Guidelines
+
+- **Config schema changes** go in `models/config.py` (Pydantic models with defaults)
+- **Container image logic** goes in `models/image.py` (dispatches on `engine.type`)
+- **vLLM command construction** lives in `models/server.py` (`_build_vllm_cmd`)
+- **New engine support** (e.g. SGLang): add to `image.py`, `server.py`, and extend the `Literal` in `config.py`
+- **Never hardcode model-specific values** in Python -- put them in YAML configs
+
+## Dependencies
+
+Managed via `pyproject.toml`: `modal`, `aiohttp`, `pyyaml`, `pydantic`. Install with `pip install -e .` or `pip install -r requirements.txt`.

@@ -1,0 +1,5 @@
+# Generated from pyproject.toml -- run `pip install -e .` to install all deps
+modal>=1.4.2
+aiohttp>=3.13.5
+pyyaml>=6.0.3
+pydantic>=2.13.4

@@ -1,0 +1,44 @@
+app_name: "gemma4-26b"
+
+model:
+  name: "google/gemma-4-26B-A4B-it"
+  revision: "47b6801b24d15ff9bcd8c96dfaea0be9ed3a0301"
+  served_name: "llm"
+
+engine:
+  type: vllm
+  version: "0.19.0"
+  extra_pip:
+    # vllm 0.19.0 requires transformers installed separately for Gemma 4
+    - "transformers==5.5.0"
+
+gpu:
+  type: "H200"
+  count: 1
+
+scaling:
+  scaledown_window_minutes: 1
+  timeout_minutes: 10
+  max_concurrent_inputs: 100
+  fast_boot: false
+
+vllm_args:
+  async_scheduling: true
+  extra_args:
+    - "--enable-auto-tool-choice"
+    - "--reasoning-parser"
+    - "gemma4"
+    - "--tool-call-parser"
+    - "gemma4"
+    - "--limit-mm-per-prompt"
+    - '{"image": 0, "video": 0, "audio": 0}'
+
+image:
+  base: "nvidia/cuda:12.9.0-devel-ubuntu22.04"
+  python: "3.12"
+  env:
+    HF_XET_HIGH_PERFORMANCE: "1"
+
+volumes:
+  hf_cache: "huggingface-cache"
+  vllm_cache: "vllm-cache"

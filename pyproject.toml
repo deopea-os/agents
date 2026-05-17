@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "agents"
+version = "0.1.0"
+description = "Modal LLM serving infrastructure"
+requires-python = ">=3.11"
+dependencies = [
+    "modal>=1.4.2",
+    "aiohttp>=3.13.5",
+    "pyyaml>=6.0.3",
+    "pydantic>=2.13.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff>=0.9.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["models*"]
+
+[tool.ruff]
+line-length = 88
+lint.select = ["E", "F", "W", "I"]
+lint.ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+known-third-party = ["modal", "pydantic", "yaml", "aiohttp"]

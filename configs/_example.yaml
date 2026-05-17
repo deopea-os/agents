@@ -1,0 +1,115 @@
+# Template for adding a new model config.
+# Copy this file to configs/<your_model>.yaml and fill in the values.
+# Then deploy with: modal deploy main.py -- --config <your_model>
+#
+# Fields marked REQUIRED must be set. All others are OPTIONAL and will
+# use the default shown if omitted. See models/config.py for the schema.
+
+# OPTIONAL -- defaults to a slug derived from model.name
+# e.g. "meta-llama/Llama-3.1-8B-Instruct" -> "llama-3.1-8b-instruct"
+# app_name: "my-model"
+
+model:
+  # REQUIRED -- Hugging Face repo ID
+  name: "org/model-name"
+
+  # OPTIONAL -- default: null (no revision pin)
+  # Pin to a specific commit to prevent surprise weight updates.
+  # Find the latest commit hash on the HF model page > Files > Commits.
+  # revision: "abc123..."
+
+  # OPTIONAL -- default: "llm"
+  # The model name clients send in the OpenAI API `model` field.
+  # served_name: "llm"
+
+engine:
+  # OPTIONAL -- default: "vllm"
+  # Serving engine. Currently only "vllm" is supported.
+  type: vllm
+
+  # OPTIONAL -- default: "0.19.0"
+  # vLLM version to install in the container image.
+  version: "0.19.0"
+
+  # OPTIONAL -- default: [] (none)
+  # Additional pip packages installed alongside vLLM.
+  # Use this for model-specific dependencies (e.g. special transformers versions).
+  # extra_pip:
+  #   - "transformers==5.5.0"
+
+gpu:
+  # OPTIONAL -- default: "H200"
+  # GPU type. Common options: A10G, A100, H100, H200, B200.
+  # See https://modal.com/docs/guide/gpu for available types and pricing.
+  type: "H100"
+
+  # OPTIONAL -- default: 1
+  # Number of GPUs per replica. Use >1 for tensor parallelism on large models.
+  count: 1
+
+scaling:
+  # OPTIONAL -- default: 15
+  # Minutes to keep a replica alive after the last request before scaling to zero.
+  scaledown_window_minutes: 15
+
+  # OPTIONAL -- default: 10
+  # Container startup timeout in minutes. Increase for very large models.
+  timeout_minutes: 10
+
+  # OPTIONAL -- default: 100
+  # Max concurrent requests per replica. Tune based on GPU memory and model size.
+  max_concurrent_inputs: 100
+
+  # OPTIONAL -- default: false
+  # Set to true to skip torch compilation for faster cold starts (lower throughput).
+  # Set to false in production for best throughput.
+  fast_boot: false
+
+vllm_args:
+  # OPTIONAL -- default: true
+  # Enable vLLM's async scheduling for better throughput under load.
+  async_scheduling: true
+
+  # OPTIONAL -- default: [] (none)
+  # Arbitrary extra CLI flags appended verbatim to the vllm serve command.
+  # Each list element is one shell token (flags and values are separate entries).
+  # Common options:
+  #   --max-model-len <int>         Limit context window (reduces VRAM usage)
+  #   --gpu-memory-utilization 0.9  Fraction of GPU VRAM to use (default 0.9)
+  #   --enable-auto-tool-choice     Enable tool/function calling
+  #   --reasoning-parser <name>     Enable chain-of-thought parsing
+  #   --tool-call-parser <name>     Parser for structured tool call outputs
+  #   --trust-remote-code           Required for some community models
+  #   --limit-mm-per-prompt <json>  Restrict multimodal inputs per request
+  # extra_args:
+  #   - "--max-model-len"
+  #   - "8192"
+
+image:
+  # OPTIONAL -- default: "nvidia/cuda:12.9.0-devel-ubuntu22.04"
+  # Base CUDA image. Match the CUDA version to your GPU and vLLM requirements.
+  # See https://hub.docker.com/r/nvidia/cuda/tags for available tags.
+  base: "nvidia/cuda:12.9.0-devel-ubuntu22.04"
+
+  # OPTIONAL -- default: "3.12"
+  # Python version added to the base image by Modal.
+  python: "3.12"
+
+  # OPTIONAL -- default: {} (no extra env vars)
+  # Environment variables baked into the container image at build time.
+  env:
+    HF_XET_HIGH_PERFORMANCE: "1"  # Faster HF Hub downloads via Xet transport
+
+volumes:
+  # OPTIONAL -- default: "huggingface-cache" (shared across all models)
+  # Modal Volume name for the Hugging Face model weight cache.
+  # Models sharing a volume name share cached weights, saving disk space.
+  hf_cache: "huggingface-cache"
+
+  # OPTIONAL -- default: "vllm-cache" (shared across all models)
+  # Modal Volume name for vLLM's JIT compilation cache (speeds up warm starts).
+  vllm_cache: "vllm-cache"
+
+  # To isolate a model's cache from others, use a unique name:
+  # hf_cache: "huggingface-cache-my-model"
+  # vllm_cache: "vllm-cache-my-model"
