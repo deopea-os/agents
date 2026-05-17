@@ -1,13 +1,12 @@
 # Modal LLM serving entrypoint.
 #
-# Select a model config with --config <name> (resolves to configs/<name>.yaml)
-# or the MODEL_CONFIG environment variable.
+# Select a model config via the MODEL_CONFIG env var (deploy) or
+# the --config flag (run/test). Both resolve to configs/<name>.yaml.
 #
 # Deploy:
-#   modal deploy main.py -- --config gemma4_26b
 #   MODEL_CONFIG=gemma4_26b modal deploy main.py
 #
-# Test (spins up a fresh replica locally):
+# Test (spins up a fresh replica and runs a health check):
 #   modal run main.py -- --config gemma4_26b
 
 import argparse
@@ -28,8 +27,8 @@ _config_name: str | None = os.environ.get("MODEL_CONFIG") or _known.config
 if _config_name is None:
     print(
         "No model config specified.\n"
-        "  Pass --config: modal deploy main.py -- --config gemma4_26b\n"
-        "  Or set env var: MODEL_CONFIG=gemma4_26b modal deploy main.py",
+        "  Deploy:  MODEL_CONFIG=gemma4_26b modal deploy main.py\n"
+        "  Test:    modal run main.py -- --config gemma4_26b",
         file=sys.stderr,
     )
     sys.exit(1)
@@ -49,10 +48,43 @@ if not _config_path.exists():
 # ---------------------------------------------------------------------------
 # Load config and wire up the Modal app.
 # ---------------------------------------------------------------------------
+import modal
+
 from models.config import ModelConfig
-from models.health import register_health_check
-from models.server import create_app
+from models.health import run_health_check
+from models.server import prepare_app
 
 config = ModelConfig.from_yaml(_config_path)
-app, serve = create_app(config)
-register_health_check(app, serve, config)
+_r = prepare_app(config)
+
+# All variables used inside serve() and test() are module-level globals.
+# This is required: Modal imports this module in the container to locate
+# these functions by name. A function defined inside another function is
+# a local/closure that Modal cannot import without serialization (which is
+# Python-version-sensitive). Module-level functions have no such constraint.
+app = _r.app
+_cmd = _r.cmd
+_served_name = config.model.served_name
+_timeout_s = _r.timeout
+
+
+@app.function(
+    image=_r.image,
+    gpu=_r.gpu,
+    scaledown_window=_r.scaledown,
+    timeout=_r.timeout,
+    volumes={
+        "/root/.cache/huggingface": _r.hf_vol,
+        "/root/.cache/vllm": _r.vllm_vol,
+    },
+)
+@modal.concurrent(max_inputs=_r.max_inputs)
+@modal.web_server(port=_r.port, startup_timeout=_r.timeout)
+def serve():
+    import subprocess
+    subprocess.Popen(_cmd)
+
+
+@app.local_entrypoint()
+async def test():
+    await run_health_check(serve, _served_name, _timeout_s)

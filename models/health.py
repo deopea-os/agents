@@ -4,39 +4,29 @@ import json
 from typing import Any
 
 import aiohttp
-import modal
-
-from .config import ModelConfig
 
 MINUTES = 60
 
 
-def register_health_check(
-    app: modal.App, serve_fn: Any, config: ModelConfig
-) -> None:
-    """Register a local_entrypoint on app that health-checks the deployed server."""
-    _served_name = config.model.served_name
-    _timeout_s = config.scaling.timeout_minutes * MINUTES
+async def run_health_check(serve_fn: Any, served_name: str, timeout_s: float) -> None:
+    """Health-check a deployed serve function and send one test message."""
+    url = await serve_fn.get_web_url.aio()
 
-    @app.local_entrypoint()
-    async def test():
-        url = await serve_fn.get_web_url.aio()
+    async with aiohttp.ClientSession(base_url=url) as session:
+        print(f"Health check: {url}/health")
+        async with session.get(
+            "/health",
+            timeout=aiohttp.ClientTimeout(total=timeout_s),
+        ) as resp:
+            assert resp.status == 200, f"Health check failed with status {resp.status}"
+        print("Health check passed.")
 
-        async with aiohttp.ClientSession(base_url=url) as session:
-            print(f"Health check: {url}/health")
-            async with session.get(
-                "/health",
-                timeout=aiohttp.ClientTimeout(total=_timeout_s),
-            ) as resp:
-                assert resp.status == 200, f"Health check failed with status {resp.status}"
-            print("Health check passed.")
-
-            messages = [
-                {"role": "system", "content": "You are a helpful assistant."},
-                {"role": "user", "content": "Say hello in one sentence."},
-            ]
-            print(f"Sending test message to model '{_served_name}' ...")
-            await _send_request(session, _served_name, messages)
+        messages = [
+            {"role": "system", "content": "You are a helpful assistant."},
+            {"role": "user", "content": "Say hello in one sentence."},
+        ]
+        print(f"Sending test message to model '{served_name}' ...")
+        await _send_request(session, served_name, messages)
 
 
 async def _send_request(

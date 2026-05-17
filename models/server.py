@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any
+from dataclasses import dataclass
 
 import modal
 
@@ -11,8 +11,22 @@ VLLM_PORT = 8000
 MINUTES = 60
 
 
-def _build_vllm_cmd(config: ModelConfig) -> list[str]:
-    """Build the vllm serve command from config. Returns a list suitable for subprocess."""
+@dataclass
+class AppResources:
+    app: modal.App
+    image: modal.Image
+    hf_vol: modal.Volume
+    vllm_vol: modal.Volume
+    cmd: list[str]
+    gpu: str
+    scaledown: int
+    timeout: int
+    max_inputs: int
+    port: int = VLLM_PORT
+
+
+def build_vllm_cmd(config: ModelConfig) -> list[str]:
+    """Build the vllm serve command from config."""
     m = config.model
     v = config.vllm_args
 
@@ -44,49 +58,25 @@ def _build_vllm_cmd(config: ModelConfig) -> list[str]:
     return cmd
 
 
-def create_app(config: ModelConfig) -> tuple[modal.App, Any]:
+def prepare_app(config: ModelConfig) -> AppResources:
     """
-    Build and return a Modal App wired up from the given ModelConfig.
+    Build and return all Modal resources needed to define the serve function.
 
-    Returns the app and the serve function so the caller can register a
-    local_entrypoint against the same app if needed.
+    The serve() function itself must be defined at module level in main.py so
+    that Modal can import it by name — a function defined inside another
+    function is a local/closure and cannot be imported without serialization,
+    which requires matching Python versions between local and remote.
     """
-    image = build_image(config)
-
-    hf_vol = modal.Volume.from_name(config.volumes.hf_cache, create_if_missing=True)
-    vllm_vol = modal.Volume.from_name(
-        config.volumes.vllm_cache, create_if_missing=True
+    return AppResources(
+        app=modal.App(config.app_name),
+        image=build_image(config),
+        hf_vol=modal.Volume.from_name(config.volumes.hf_cache, create_if_missing=True),
+        vllm_vol=modal.Volume.from_name(
+            config.volumes.vllm_cache, create_if_missing=True
+        ),
+        cmd=build_vllm_cmd(config),
+        gpu=f"{config.gpu.type}:{config.gpu.count}",
+        scaledown=config.scaling.scaledown_window_minutes * MINUTES,
+        timeout=config.scaling.timeout_minutes * MINUTES,
+        max_inputs=config.scaling.max_concurrent_inputs,
     )
-
-    app = modal.App(config.app_name)
-
-    # Extract primitives before the closure so the serve() function only
-    # captures plain Python objects (no Pydantic models). Modal serialises
-    # the closure when deploying; keeping it simple avoids import issues
-    # inside the container image which doesn't have the local models/ package.
-    _cmd = _build_vllm_cmd(config)
-    _port = VLLM_PORT
-    _scaledown = config.scaling.scaledown_window_minutes * MINUTES
-    _timeout = config.scaling.timeout_minutes * MINUTES
-    _gpu = f"{config.gpu.type}:{config.gpu.count}"
-    _max_inputs = config.scaling.max_concurrent_inputs
-
-    @app.function(
-        image=image,
-        gpu=_gpu,
-        scaledown_window=_scaledown,
-        timeout=_timeout,
-        volumes={
-            "/root/.cache/huggingface": hf_vol,
-            "/root/.cache/vllm": vllm_vol,
-        },
-    )
-    @modal.concurrent(max_inputs=_max_inputs)
-    @modal.web_server(port=_port, startup_timeout=_timeout)
-    def serve():
-        import subprocess
-
-        print("Starting vLLM server:", *_cmd)
-        subprocess.Popen(_cmd)
-
-    return app, serve

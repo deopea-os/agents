@@ -19,6 +19,12 @@ dev = [
     "ruff>=0.9.0",
 ]
 
+[project.scripts]
+agents = "cli:main"
+
+[tool.setuptools]
+py-modules = ["cli"]
+
 [tool.setuptools.packages.find]
 include = ["models*"]
 

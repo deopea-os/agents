@@ -11,14 +11,15 @@ Config-driven infrastructure for deploying OpenAI-compatible LLM inference endpo
 
 ```
 agents/
-  main.py              # Thin CLI entrypoint (parses --config, wires up Modal app)
+  cli.py               # `agents` console script (deploy / run subcommands)
+  main.py              # Modal entrypoint (loads config, wires up Modal app)
   configs/             # Per-model YAML configs (one file per deployment)
     gemma4_26b.yaml    # Example: Gemma 4 26B on H200
     _example.yaml      # Annotated template for adding new models
   models/              # Core Python package
     config.py          # Pydantic schema -- validates YAML at load time
     image.py           # Modal container Image factory (vLLM, future SGLang)
-    server.py          # Modal App factory + vLLM command builder
+    server.py          # AppResources factory + vLLM command builder
     health.py          # Health check local_entrypoint
 ```
 
@@ -32,9 +33,8 @@ agents/
 ## Key Commands
 
 ```bash
-modal deploy main.py -- --config <name>   # Deploy to Modal
-modal run main.py -- --config <name>      # Spin up + health check
-MODEL_CONFIG=<name> modal deploy main.py  # Alternative via env var
+agents deploy <name>   # Deploy to Modal
+agents run <name>      # Spin up + health check
 ```
 
 ## Adding a New Model

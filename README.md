@@ -2,7 +2,7 @@
 
 Config-driven infrastructure for deploying OpenAI-compatible LLM inference endpoints on [Modal](https://modal.com/) using [vLLM](https://docs.vllm.ai/).
 
-Each model is described by a single YAML file. Adding a new model is as simple as creating a new config and running `modal deploy`.
+Each model is described by a single YAML file. Adding a new model is as simple as creating a new config and running `agents deploy`.
 
 ---
 
@@ -28,16 +28,18 @@ uv pip install -e .
 pip install -r requirements.txt
 ```
 
+> The `agents` command is installed into the virtual environment. Activate it first (`source .venv/bin/activate`) or prefix commands with `.venv/bin/agents` if you prefer not to activate.
+
 ### Deploy a model
 
 ```bash
-modal deploy main.py -- --config gemma4_26b
+agents deploy gemma4_26b
 ```
 
 ### Test a deployed model
 
 ```bash
-modal run main.py -- --config gemma4_26b
+agents run gemma4_26b
 ```
 
 This spins up a fresh container, runs a `/health` check, then sends a single streaming chat completion request.
@@ -48,7 +50,8 @@ This spins up a fresh container, runs a `/health` check, then sends a single str
 
 ```
 agents/
-├── main.py               # CLI entrypoint — loads config, wires up Modal app
+├── cli.py                # `agents` console script (deploy / run subcommands)
+├── main.py               # Modal entrypoint — loads config, wires up Modal app
 ├── pyproject.toml        # Project metadata and dependencies
 ├── requirements.txt      # Pinned requirements (derived from pyproject.toml)
 │
@@ -68,9 +71,9 @@ agents/
 ## How It Works
 
 ```
-modal deploy main.py -- --config <name>
+agents deploy <name>
          │
-         ▼
+         ▼  (sets MODEL_CONFIG=<name>, calls modal deploy main.py)
     main.py resolves configs/<name>.yaml
          │
          ▼
@@ -106,15 +109,15 @@ The deployed function is a `@modal.web_server` that exposes an OpenAI-compatible
 3. Deploy:
 
    ```bash
-   modal deploy main.py -- --config my_model
+   agents deploy my_model
    ```
 
 That's it. GPU, scaling, image, and volume settings all have sensible defaults.
 
-### Env var alternative
+### Test without deploying
 
 ```bash
-MODEL_CONFIG=my_model modal deploy main.py
+agents run my_model
 ```
 
 ---
