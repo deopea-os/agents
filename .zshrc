@@ -1,5 +1,5 @@
-# Local zsh config for the agents project.
-# Source this file to get the `agents` CLI on your PATH:
+# Local zsh config for the modal-stack project.
+# Source this file to get the `modalstack` CLI on your PATH:
 #
 #   source ./.zshrc
 #

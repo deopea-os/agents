@@ -1,17 +1,17 @@
 ---
-description: Project overview, structure, and usage for the Modal LLM serving infrastructure
+description: Project overview, structure, and usage for Modal Stack (config-driven Modal LLM serving)
 alwaysApply: true
 ---
 
-# Modal LLM Serving Infrastructure
+# Modal Stack
 
 Config-driven infrastructure for deploying OpenAI-compatible LLM inference endpoints on [Modal](https://modal.com/) using vLLM.
 
 ## Project Structure
 
 ```
-agents/
-  cli.py               # `agents` console script (deploy / run subcommands)
+modal-stack/
+  cli.py               # `modalstack` console script (deploy / run subcommands)
   main.py              # Modal entrypoint (loads config, wires up Modal app)
   configs/             # Per-model YAML configs (one file per deployment)
     gemma4_26b.yaml    # Example: Gemma 4 26B on H200
@@ -27,28 +27,28 @@ agents/
 
 ## How It Works
 
-1. User specifies a config: `modal deploy main.py -- --config gemma4_26b`
-2. `main.py` loads `configs/gemma4_26b.yaml` and validates via Pydantic
+1. User specifies a config: `modalstack deploy <name>` (or `modal deploy main.py` with `MODEL_CONFIG`)
+2. `main.py` loads `configs/<name>.yaml` and validates via Pydantic
 3. `models/server.py` builds the Modal App with GPU, volumes, and vLLM command
 4. Modal deploys the container with an OpenAI-compatible API endpoint
 
 ## Key Commands
 
 ```bash
-agents deploy <name>          # Deploy to Modal
-agents run <name>             # Spin up + health check
-agents generate-config        # Regenerate models/_generated.py from schema
-agents generate-docs          # Regenerate README config reference from schema
+modalstack deploy <name>          # Deploy to Modal
+modalstack run <name>             # Spin up + health check
+modalstack generate-config        # Regenerate models/_generated.py from schema
+modalstack generate-docs          # Regenerate README config reference from schema
 ```
 
 ## Adding a New Model
 
 1. Create `configs/<model_name>.yaml` (only `model.name` is required; see `_example.yaml`)
-2. Deploy with `modal deploy main.py -- --config <model_name>`
+2. Deploy with `modalstack deploy <model_name>`
 
 ## Editing Guidelines
 
-- **Config schema changes** go in `schemas/model-config.schema.json`, then run `agents generate-config` and `agents generate-docs`
+- **Config schema changes** go in `schemas/model-config.schema.json`, then run `modalstack generate-config` and `modalstack generate-docs`
 - **Custom config behavior** (e.g. `from_yaml`, default `app_name`) goes in `models/config.py` only
 - **Container image logic** goes in `models/image.py` (dispatches on `engine.type`)
 - **vLLM command construction** lives in `models/server.py` (`_build_vllm_cmd`)

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://github.com/deopea/agents/schemas/model-config.schema.json",
+  "$id": "https://github.com/deopea/modal-stack/schemas/model-config.schema.json",
   "title": "Modal LLM Model Configuration",
   "description": "Configuration schema for deploying OpenAI-compatible LLM inference endpoints on Modal using vLLM. Each YAML file in configs/ defines a single model deployment.",
   "type": "object",
@@ -32,7 +32,7 @@
       "properties": {
         "token_name": {
           "type": "string",
-          "description": "Name of the Modal Secret that holds the API token. The secret must contain an AUTH_TOKEN key (see https://modal.com/docs/guide/webhooks#token-based-authentication). vLLM is started with --api-key so clients must send Authorization: Bearer <token> on /v1 requests. Create the secret with: modal secret create <token_name> AUTH_TOKEN=<your-token>. Alternatively pass at deploy or run time: agents deploy <config> -t <token_name>",
+          "description": "Name of the Modal Secret that holds the API token. The secret must contain an AUTH_TOKEN key (see https://modal.com/docs/guide/webhooks#token-based-authentication). vLLM is started with --api-key so clients must send Authorization: Bearer <token> on /v1 requests. Create the secret with: modal secret create <token_name> AUTH_TOKEN=<your-token>. Alternatively pass at deploy or run time: modalstack deploy <config> -t <token_name>",
           "examples": ["my-llm-auth", "gemma4-26b-auth"]
         }
       }

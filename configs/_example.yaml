@@ -1,7 +1,7 @@
 # yaml-language-server: $schema=../schemas/model-config.schema.json
 # Template for adding a new model config.
 # Copy this file to configs/<your_model>.yaml and fill in the values.
-# Then deploy with: agents deploy <your_model>
+# Then deploy with: modalstack deploy <your_model>
 #
 # Fields marked REQUIRED must be set. All others are OPTIONAL and will
 # use the default shown if omitted. See schemas/model-config.schema.json for the schema.
@@ -104,7 +104,7 @@ image:
 
 # OPTIONAL -- Bearer token auth via Modal Secret
 # Create: modal secret create <token_name> AUTH_TOKEN=<your-token>
-# Deploy:  agents deploy <your_model> -t <token_name>
+# Deploy:  modalstack deploy <your_model> -t <token_name>
 # Or in YAML:
 # auth:
 #   token_name: "my-llm-auth"

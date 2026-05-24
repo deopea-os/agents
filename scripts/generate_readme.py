@@ -301,7 +301,7 @@ def generate_config_reference() -> str:
         "The secret must define an `AUTH_TOKEN` key. "
         "vLLM enforces Bearer auth on `/v1` endpoints when auth is enabled. "
         "Pass the secret name at deploy or run time: "
-        "`agents deploy <config> -t <token_name>` (or set `AUTH_TOKEN_NAME` in the environment)."
+        "`modalstack deploy <config> -t <token_name>` (or set `AUTH_TOKEN_NAME` in the environment)."
     )
 
     return "\n".join(sections)
@@ -346,7 +346,7 @@ def main() -> None:
 
     if check:
         if changed:
-            print("README.md is out of date. Run 'agents generate-docs' to update.", file=sys.stderr)
+            print("README.md is out of date. Run 'modalstack generate-docs' to update.", file=sys.stderr)
             sys.exit(1)
         else:
             print("README.md is up to date.")

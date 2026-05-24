@@ -1,8 +1,8 @@
-# Modal LLM Serving
+# Modal Stack
 
 Config-driven infrastructure for deploying OpenAI-compatible LLM inference endpoints on [Modal](https://modal.com/) using [vLLM](https://docs.vllm.ai/).
 
-Each model is described by a single YAML file. Adding a new model is as simple as creating a new config and running `agents deploy`.
+Each model is described by a single YAML file. Adding a new model is as simple as creating a new config and running `modalstack deploy`.
 
 ---
 
@@ -28,21 +28,21 @@ uv pip install -e .
 pip install -r requirements.txt
 ```
 
-> The `agents` command is installed into the virtual environment. Activate it first (`source .venv/bin/activate`) or prefix commands with `.venv/bin/agents` if you prefer not to activate.
+> The `modalstack` command is installed into the virtual environment. Activate it first (`source .venv/bin/activate`) or prefix commands with `.venv/bin/modalstack` if you prefer not to activate.
 
 ### Deploy a model
 
 ```bash
-agents deploy gemma4_26b
+modalstack deploy gemma4_26b
 
 # With API auth:
-agents deploy gemma4_26b -t my-llm-auth
+modalstack deploy gemma4_26b -t my-llm-auth
 ```
 
 ### Test a deployed model
 
 ```bash
-agents run gemma4_26b
+modalstack run gemma4_26b
 ```
 
 This spins up a fresh container, runs a `/health` check, then sends a single streaming chat completion request.
@@ -59,8 +59,8 @@ For Modal GPU and model tier recommendations (three-tier stack, cost estimates, 
 ## Project Structure
 
 ```
-agents/
-├── cli.py                # `agents` console script (deploy / run subcommands)
+modal-stack/
+├── cli.py                # `modalstack` console script (deploy / run subcommands)
 ├── main.py               # Modal entrypoint — loads config, wires up Modal app
 ├── pyproject.toml        # Project metadata and dependencies
 ├── requirements.txt      # Pinned requirements (derived from pyproject.toml)
@@ -90,7 +90,7 @@ agents/
 ## How It Works
 
 ```
-agents deploy <name>
+modalstack deploy <name>
          │
          ▼  (sets MODEL_CONFIG=<name>, calls modal deploy main.py)
     main.py resolves configs/<name>.yaml
@@ -128,7 +128,7 @@ The deployed function is a `@modal.web_server` that exposes an OpenAI-compatible
 3. Deploy:
 
    ```bash
-   agents deploy my_model
+   modalstack deploy my_model
    ```
 
 That's it. GPU, scaling, image, and volume settings all have sensible defaults.
@@ -136,7 +136,7 @@ That's it. GPU, scaling, image, and volume settings all have sensible defaults.
 ### Test without deploying
 
 ```bash
-agents run my_model
+modalstack run my_model
 ```
 
 ---
@@ -305,7 +305,7 @@ Modal Volume names for persistent caching. By default all deployments share the 
 
 Optional Bearer token authentication for the OpenAI-compatible API. The token value is stored in a Modal Secret, not in this config file.
 
-Create the secret with `modal secret create <token_name> AUTH_TOKEN=<your-token>`. The secret must define an `AUTH_TOKEN` key. vLLM enforces Bearer auth on `/v1` endpoints when auth is enabled. Pass the secret name at deploy or run time: `agents deploy <config> -t <token_name>` (or set `AUTH_TOKEN_NAME` in the environment).
+Create the secret with `modal secret create <token_name> AUTH_TOKEN=<your-token>`. The secret must define an `AUTH_TOKEN` key. vLLM enforces Bearer auth on `/v1` endpoints when auth is enabled. Pass the secret name at deploy or run time: `modalstack deploy <config> -t <token_name>` (or set `AUTH_TOKEN_NAME` in the environment).
 <!-- END GENERATED CONFIG REFERENCE -->
 
 ---
@@ -348,7 +348,7 @@ The `/docs` route on the URL serves interactive Swagger UI for exploring the API
 
 | What to change                                    | Where                                                                                      |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Add a config field or change a default            | `schemas/model-config.schema.json`, then `agents generate-config` + `agents generate-docs` |
+| Add a config field or change a default            | `schemas/model-config.schema.json`, then `modalstack generate-config` + `modalstack generate-docs` |
 | Change how the container image is built           | `models/image.py`                                                                          |
 | Change GPU, volumes, or vLLM command construction | `models/server.py`                                                                         |
 | Change the health check / test request            | `models/health.py`                                                                         |

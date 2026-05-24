@@ -7,7 +7,7 @@ from pathlib import Path
 _ROOT = Path(__file__).parent
 
 # Editable installs only map top-level packages declared at install time; ensure
-# `scripts/` is importable when running the `agents` console script.
+# `scripts/` is importable when running the `modalstack` console script.
 _root_str = str(_ROOT)
 if _root_str not in sys.path:
     sys.path.insert(0, _root_str)
@@ -70,7 +70,7 @@ def _cmd_generate_docs(args: argparse.Namespace) -> None:
     if args.check:
         if changed:
             print(
-                "README.md is out of date. Run 'agents generate-docs' to update.",
+                "README.md is out of date. Run 'modalstack generate-docs' to update.",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -92,7 +92,7 @@ def _cmd_generate_config(args: argparse.Namespace) -> None:
         if changed:
             print(
                 "models/_generated.py is out of date. "
-                "Run 'agents generate-config' to update.",
+                "Run 'modalstack generate-config' to update.",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -107,7 +107,7 @@ def _cmd_generate_config(args: argparse.Namespace) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(
-        prog="agents",
+        prog="modalstack",
         description="Deploy and run Modal LLM serving configs.",
     )
     sub = parser.add_subparsers(dest="command", required=True)

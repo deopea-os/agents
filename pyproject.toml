@@ -3,9 +3,9 @@ requires = ["setuptools>=68"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "agents"
+name = "modal-stack"
 version = "0.1.0"
-description = "Modal LLM serving infrastructure"
+description = "Deploy Modal LLM stacks from YAML — no app code required"
 requires-python = ">=3.11"
 dependencies = [
     "modal>=1.4.2",
@@ -32,7 +32,7 @@ use-union-operator = true
 field-constraints = true
 
 [project.scripts]
-agents = "cli:main"
+modalstack = "cli:main"
 
 [tool.setuptools]
 py-modules = ["cli"]

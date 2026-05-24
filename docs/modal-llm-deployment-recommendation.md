@@ -224,9 +224,9 @@ Shared volumes (already in project defaults):
 Deploy:
 
 ```bash
-agents deploy qwen3_coder_next_rtx_pro_6000   # Tier 2 — daily driver
-agents deploy qwen3_coder_next_h200           # Tier 3 — 256K context
-agents deploy qwen2_5_coder_7b                # Tier 1 — cheap & fast
+modalstack deploy qwen3_coder_next_rtx_pro_6000   # Tier 2 — daily driver
+modalstack deploy qwen3_coder_next_h200           # Tier 3 — 256K context
+modalstack deploy qwen2_5_coder_7b                # Tier 1 — cheap & fast
 ```
 
 ---

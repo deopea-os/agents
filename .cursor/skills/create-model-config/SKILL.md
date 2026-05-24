@@ -62,7 +62,7 @@ Examples: `gemma4_26b.yaml`, `qwen3_coder_next_h200.yaml`, `llama3_8b.yaml`
    ```
 4. Validate:
    ```bash
-   agents run <name>   # optional: full Modal health check
+   modalstack run <name>   # optional: full Modal health check
    ```
    Or validate locally without Modal:
    ```bash
@@ -129,8 +129,8 @@ Protect `/v1` API calls with a Bearer token. The token value lives in a [Modal S
 2. Pass the secret name at deploy/run:
 
    ```bash
-   agents deploy <name> -t <token_name>
-   agents run <name> -t <token_name>
+   modalstack deploy <name> -t <token_name>
+   modalstack run <name> -t <token_name>
    ```
 
    Or set `AUTH_TOKEN_NAME=<token_name>` in the environment when calling `modal deploy` directly.
@@ -230,13 +230,13 @@ image:
 Deploy:
 
 ```bash
-agents deploy <name>
+modalstack deploy <name>
 ```
 
 Test (health check + sample completion):
 
 ```bash
-agents run <name>
+modalstack run <name>
 ```
 
 ## Schema / Docs Maintenance
@@ -244,8 +244,8 @@ agents run <name>
 If you change the JSON schema, regenerate artifacts:
 
 ```bash
-agents generate-config   # models/_generated.py
-agents generate-docs     # README Config Reference
+modalstack generate-config   # models/_generated.py
+modalstack generate-docs     # README Config Reference
 ```
 
 Pre-commit runs these automatically when `schemas/model-config.schema.json` is staged.
