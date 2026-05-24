@@ -123,5 +123,4 @@ async def test():
         _served_name,
         _timeout_s,
         api_key=api_key,
-        reject_empty_tool_calls="qwen2_5_coder" in _cmd,
     )

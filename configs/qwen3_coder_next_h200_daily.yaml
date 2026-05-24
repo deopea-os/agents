@@ -1,5 +1,5 @@
 # yaml-language-server: $schema=../schemas/model-config.schema.json
-# Tier 2 — daily driver (see docs/modal-llm-deployment-recommendation.md)
+# Tier 2 — Daily: 200K context (see docs/modal-llm-deployment-recommendation.md)
 app_name: "coder-daily"
 
 model:
@@ -7,7 +7,7 @@ model:
   served_name: "coder-daily"
 
 gpu:
-  type: "RTX-PRO-6000"
+  type: "H200"
   count: 1
 
 scaling:
@@ -20,7 +20,7 @@ vllm_args:
   async_scheduling: true
   extra_args:
     - "--max-model-len"
-    - "65536"
+    - "200000"
     - "--enable-expert-parallel"
     - "--enable-auto-tool-choice"
     - "--tool-call-parser"

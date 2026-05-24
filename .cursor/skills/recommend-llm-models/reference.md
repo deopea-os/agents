@@ -189,4 +189,4 @@ Show GPU-hours assumption explicitly. With usage CSVs, derive hours from session
 | `schemas/model-config.schema.json` | Valid GPU types and fields |
 | `configs/_example.yaml` | Config shape |
 | [create-model-config](../create-model-config/SKILL.md) | After user approves YAML |
-| `models/vendor/*` | Known tool-parser vendoring — verify still required for chosen model |
+| vLLM tool parsers | Use built-in parsers from vLLM docs (e.g. `qwen3_coder` for Qwen3-Coder) |

@@ -16,7 +16,7 @@ Produce **impartial, evidence-backed** model and GPU recommendations for **Modal
 4. **Conflicts → user decides** — When credible sources disagree, present a **conflict matrix** and ask the user to weight priorities before a final pick. Do not silently pick a side.
 5. **Missing spec → conditional ranges** — If budget, workload, or context are unknown, give **scenario branches** (e.g. “if &lt;$30/mo credit-covered usage…”) instead of inventing defaults. Ask blocking questions before a single “best” answer.
 6. **Open-weight first** — Recommend HF models deployable via this repo’s stack. Mention closed APIs only for **comparison** when the user asks or when benchmarks require a reference point — label as non-Modal.
-7. **Repo artifacts are examples only** — `docs/modal-llm-deployment-recommendation.md`, `configs/*.yaml`, and ad-hoc markdown in the repo illustrate patterns; **re-validate** claims for the current request.
+7. **Repo artifacts are examples only** — `docs/modal-llm-deployment-recommendation.md` (current), `configs/*.yaml`, etc.; **re-validate** claims for the current request. Ignore `*.deprecated` unless the user asks for history.
 
 ## Workflow
 

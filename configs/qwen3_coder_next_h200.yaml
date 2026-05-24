@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=../schemas/model-config.schema.json
-# Tier 3 — long context 200K+ (see docs/modal-llm-deployment-recommendation.md)
-app_name: "coder-long-context"
+# Tier 3 — Max: max context + peak open coding (see docs/modal-llm-deployment-recommendation.md)
+app_name: "coder-max"
 
 model:
   name: "Qwen/Qwen3-Coder-Next-FP8"
-  served_name: "coder-long-context"
+  served_name: "coder-max"
 
 gpu:
   type: "H200"

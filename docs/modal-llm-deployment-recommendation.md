@@ -1,8 +1,8 @@
 # Modal LLM deployment recommendation
 
-**Status:** May 2026 — load-bearing claims verified against primary sources.
+**Status:** May 2026 — revised after production feedback on Tier 1 (7B / 32K) and context needs for Copilot / Claude Code agents.
 
-**Interactive view:** Open [`canvases/final-recommendation.canvas.tsx`](../canvases/final-recommendation.canvas.tsx) in Cursor for charts, tier cards, and cost scenarios.
+**Previous plan (deprecated):** [`modal-llm-deployment-recommendation.md.deprecated`](modal-llm-deployment-recommendation.md.deprecated) — original 7B / RTX / long-context tier write-up, kept for records only.
 
 ---
 
@@ -10,249 +10,183 @@
 
 For **personal, bursty agentic coding** on Modal with a **$20–50/month** target (soft limit), deploy **three scale-to-zero tiers** that share the Hugging Face cache volume:
 
-| Tier | Role | Model | GPU | Practical context |
-|------|------|-------|-----|-------------------|
-| **1** | Cheap & fast | `Qwen/Qwen2.5-Coder-7B-Instruct` | L4 (24 GB) | ~32K reliable |
-| **2** | Daily driver | `Qwen/Qwen3-Coder-Next-FP8` | RTX PRO 6000 (96 GB) | ~64–128K reliable |
-| **3** | Long-context | `Qwen/Qwen3-Coder-Next-FP8` (same weights) | H200 (141 GB) | ~256K reliable |
+| Tier | Role | Model | GPU | `--max-model-len` | OpenAI `model` id |
+|------|------|-------|-----|-------------------|-------------------|
+| **1 — Fast** | Speed + 128K agentic | `Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8` | L40S (48 GB) | 131072 | `coder-fast` |
+| **2 — Daily** | Workhorse 200K | `Qwen/Qwen3-Coder-Next-FP8` | H200 (141 GB) | 200000 | `coder-daily` |
+| **3 — Max** | Max context + peak open coding | `Qwen/Qwen3-Coder-Next-FP8` | H200 (141 GB) | 262144 | `coder-max` |
 
-**Do not deploy** Llama 3.1 405B on a single B200 (weights alone exceed 192 GB at INT4). **Do not treat** Qwen3-Coder-480B on 8× H200 as a better *software-engineering* tier than Coder-Next 80B — SWE-bench Verified is slightly *lower* on the 480B.
+**Why this changed:** Tier 1 at 32K on Qwen2.5-Coder-7B ran out of context immediately for agentic clients, showed weak reasoning, and had awkward tool-calling. Fast is now **speed-first** (smaller active MoE, L40S) with **128K** served context. Daily and Max both use **Coder-Next** on **H200** with different context ceilings — Daily for routine 200K work, Max for full 256K native window.
 
-With **Modal Starter’s $30/month compute credit**, light-to-moderate usage (~6.5 GPU-hours/month) keeps the single-GPU stack at **$0 out of pocket** after credit. Heavy usage (~15 GPU-hrs/mo) still keeps Tier 2 under ~$20 out of pocket; only sustained H200-as-primary exceeds $50.
+**Do not deploy** Llama 3.1 405B on a single B200 (weights alone exceed 192 GB at INT4). **Do not treat** Qwen3-Coder-480B on 8× H200 as better *software-engineering* tier than Coder-Next — SWE-bench Verified is slightly *lower* on 480B (~64.7% vs **70.6%**). **DeepSeek-V4-Pro-Max** and **MiniMax-M2.7** need **4–8 GPUs** and do not fit this single-GPU, scale-to-zero stack (see comparison notes below).
 
-**Quality vs Claude Opus:** Qwen3-Coder-Next scores **70.6%** SWE-bench Verified; Claude Opus 4.6 (Adaptive Reasoning, Max Effort) is **~80.8%** — roughly a **10-point gap** on real repo-fix tasks, the smallest gap available from any single-GPU open model in 2026.
+**Quality vs Claude Opus:** Qwen3-Coder-Next scores **70.6%** SWE-bench Verified; Claude Opus 4.6 is **~80.8%** — roughly a **10-point gap** on repo-fix tasks. That remains the best evidenced **single-GPU** open coding option in 2026.
 
 ---
 
-## Requirements and constraints (how we got here)
+## Requirements and constraints
 
 ### Stated goals
 
-- **Budget:** ~$20–50/month (not hard); personal projects, not 24/7 load.
-- **Quality:** As close to Claude Opus as practical for **coding** and **agentic** work.
+- **Budget:** ~$20–50/month (soft); personal, bursty use.
+- **Quality:** Strong agentic coding; minimize tool/parser friction with Copilot / Claude Code–style clients.
 - **Hosting:** Modal + vLLM, scale-to-zero, cold starts acceptable.
-- **Concurrency:** Occasionally 2–4 parallel requests (not large batches).
-- **Vision:** Nice-to-have (optional sidecar; not in the three core tiers).
-- **Context:** Originally a **200K minimum** everywhere; **revised** so only **Tier 3** must guarantee 200K+. Tiers 1–2 use each model’s practical context.
+- **Concurrency:** 2–4 parallel requests.
+- **Context:** **≥128K** for agentic clients on Fast; **200K** on Daily; **250K+** on Max.
 
-### Modal billing assumptions
+### Production feedback (May 2026)
 
-- GPU billed **per second** while a container runs (including idle window before scale-down).
-- **Starter plan:** **$30/month free compute credit** ([Modal pricing](https://modal.com/pricing)); resets monthly, no rollover.
-- Tables below use **gross** cost and **out-of-pocket** = `max(0, gross − $30)`.
+| Prior tier | Issue | Response |
+|------------|-------|----------|
+| Fast: 7B @ 32K | Context exhausted immediately; low intelligence; tool incompatibility | **New model:** Qwen3-Coder-30B-A3B-FP8; **131072** `max-model-len`; **L40S** for speed |
+| Daily: Coder-Next @ 65K on RTX | Felt weak (likely context-limited) | **Same model**, **200000** on **H200** |
+| Long-context tier | Want “Max” naming + max intelligence | **coder-max** @ **262144** on H200 |
 
----
+### Modal billing
 
-## GPU pricing reference (Modal rates)
-
-| GPU | VRAM | $/sec | ~$/hr | ~hrs for $50 gross |
-|-----|------|-------|-------|---------------------|
-| T4 | 16 GB | $0.000164 | $0.59 | 84.7 |
-| L4 | 24 GB | $0.000222 | $0.80 | 62.6 |
-| A10 | 24 GB | $0.000306 | $1.10 | 45.4 |
-| L40S | 48 GB | $0.000542 | $1.95 | 25.6 |
-| A100 40GB | 40 GB | $0.000583 | $2.10 | 23.8 |
-| A100 80GB | 80 GB | $0.000694 | $2.50 | 20.0 |
-| RTX PRO 6000 | 96 GB | $0.000842 | $3.03 | 16.5 |
-| H100 | 80 GB | $0.001097 | $3.95 | 12.7 |
-| H200 | 141 GB | $0.001261 | $4.54 | 11.0 |
-| B200 | 192 GB | $0.001736 | $6.25 | 8.0 |
-| 8× H200 | — | — | $36.32 | 1.4 |
-
-Modal may **auto-upgrade** H100 → H200 at the same rate; H200! pins H100 without upgrade.
+- GPU billed per second while the container runs (including scaledown idle).
+- **Starter:** **$30/month** compute credit ([Modal pricing](https://modal.com/pricing)).
+- **Out-of-pocket** = `max(0, gross − $30)`.
 
 ---
 
-## Final three tiers (recommended configs)
+## GPU pricing reference (Modal)
 
-### Tier 1 — Cheap & fast
+| GPU | VRAM | ~$/hr | Deploy config |
+|-----|------|-------|---------------|
+| L4 | 24 GB | $0.80 | *(retired for Fast tier)* |
+| **L40S** | 48 GB | **$1.95** | Fast |
+| RTX PRO 6000 | 96 GB | $3.03 | *(retired — Daily moved to H200 for 200K)* |
+| **H200** | 141 GB | **$4.54** | Daily + Max |
+
+---
+
+## Tier details
+
+### Tier 1 — Fast (`coder-fast`)
 
 | Field | Value |
 |-------|--------|
-| **Model** | `Qwen/Qwen2.5-Coder-7B-Instruct` |
-| **GPU** | `L4` |
-| **Rate** | ~$0.80/hr |
-| **VRAM** | ~14 GB BF16 weights; ample KV headroom |
-| **Context** | 128K native; **32K reliable** for daily use |
-| **Deploy name** | `qwen2_5_coder_7b` ([`configs/qwen2_5_coder_7b.yaml`](../configs/qwen2_5_coder_7b.yaml)) |
-| **OpenAI model id** | `coder-fast` (`served_name` in config — use this in VS Code / Copilot BYOK) |
-| **Tool calling** | `--tool-call-parser qwen2_5_coder` + vendored plugin/chat template ([hanXen/vllm-qwen2.5-coder-tool-parser](https://github.com/hanXen/vllm-qwen2.5-coder-tool-parser), pinned under `models/vendor/qwen2_5_coder/`). Do **not** use `hermes` on Qwen2.5-Coder. |
+| **Model** | `Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8` |
+| **GPU** | `L40S` |
+| **Active params** | ~3.3B (30.5B MoE total) |
+| **Context** | 256K native; serve **131072** for Copilot/agent headroom |
+| **SWE-bench Verified** | **51.9%** Pass@1 (OpenHands; vendor/Nebius) — below Coder-Next, far above 7B tier |
+| **Config** | [`configs/qwen3_coder_30b_a3b_l40s.yaml`](../configs/qwen3_coder_30b_a3b_l40s.yaml) |
+| **vLLM** | `--tool-call-parser qwen3_coder` (same family as Daily/Max) |
 
-**Best for:** Autocomplete, fill-in-the-middle, scripts, structured JSON, quick edits, lightweight Copilot/agent tool use.
+**Best for:** Fast agent turns, shorter tasks, when Daily/Max are cold. Prioritize **wall-clock speed** over lowest $/hr (L40S vs L4).
 
-**Gross @ 6.5 GPU-hrs/mo:** ~$5 · **After $30 credit:** $0
+**Copilot token budget (approx.):** max input ~98304, max output ~32768 (if client splits 75/25 within 131072).
 
 ---
 
-### Tier 2 — Balanced daily driver (primary)
+### Tier 2 — Daily (`coder-daily`)
 
 | Field | Value |
 |-------|--------|
 | **Model** | `Qwen/Qwen3-Coder-Next-FP8` |
-| **GPU** | `RTX-PRO-6000` (or `RTX PRO 6000` per Modal GPU string) |
-| **Rate** | ~$3.03/hr |
-| **VRAM** | ~80 GB FP8 weights + KV on 96 GB |
-| **Context** | 262K native; **64–128K reliable** (verify after deploy) |
-| **Deploy name** | `qwen3_coder_next_rtx_pro_6000` ([`configs/qwen3_coder_next_rtx_pro_6000.yaml`](../configs/qwen3_coder_next_rtx_pro_6000.yaml)) |
+| **GPU** | `H200` |
+| **Context** | **`--max-model-len` 200000** |
+| **SWE-bench Verified** | **70.6%** |
+| **Config** | [`configs/qwen3_coder_next_h200_daily.yaml`](../configs/qwen3_coder_next_h200_daily.yaml) |
 
-**Best for:** Everyday agentic coding, refactors, repo Q&A, tool-use chains — best **$/quality** when 200K is not required.
+**Best for:** Primary agentic coding sessions at 200K context.
 
-**Gross @ 6.5 GPU-hrs/mo:** ~$20 · **After credit:** $0  
-**Gross @ 15 GPU-hrs/mo (heavy):** ~$45 · **After credit:** ~$15
+**Why H200 (not RTX PRO 6000):** Vendor warns OOM at long context on smaller VRAM; 200K KV + ~80 GB FP8 weights is safer on 141 GB H200 with `max_concurrent_inputs: 4`.
 
-**Why not L40S + 30B?** Qwen3-Coder-30B-A3B is strong but **strictly below** Coder-Next on SWE-bench Verified while costing similar wall-clock on a cheaper GPU — worse intelligence per dollar for agentic coding.
-
-**Why not H200 here?** Same model on H200 costs **33% more** for context you rarely need on median sessions. Use H200 only as Tier 3.
+**Copilot token budget (approx.):** max input ~150000, max output ~32768.
 
 ---
 
-### Tier 3 — Maximum context (200K+)
+### Tier 3 — Max (`coder-max`)
 
 | Field | Value |
 |-------|--------|
-| **Model** | `Qwen/Qwen3-Coder-Next-FP8` (same checkpoint as Tier 2) |
+| **Model** | `Qwen/Qwen3-Coder-Next-FP8` (same weights as Daily) |
 | **GPU** | `H200` |
-| **Rate** | ~$4.54/hr |
-| **VRAM** | ~80 GB weights + **~60 GB** headroom for full KV at 256K |
-| **Context** | **256K reliable** |
-| **Deploy name** | `qwen3_coder_next_h200` ([`configs/qwen3_coder_next_h200.yaml`](../configs/qwen3_coder_next_h200.yaml)) |
+| **Context** | **`--max-model-len` 262144** (256K native) |
+| **Config** | [`configs/qwen3_coder_next_h200.yaml`](../configs/qwen3_coder_next_h200.yaml) |
 
-**Best for:** Single-shot analysis of very large codebases, long agent trajectories, 200K+ prompts.
+**Best for:** Very large repos, long single-shot trajectories, maximum context.
 
-**Gross @ 6.5 GPU-hrs/mo:** ~$30 · **After credit:** $0  
-**Gross @ 15 GPU-hrs/mo:** ~$68 · **After credit:** ~$38 (only tier that can exceed $50 at heavy sustained use)
+**Intelligence vs “bigger” models:** On SWE-bench Verified, Coder-Next beats Qwen3-Coder-480B on 8× GPU and matches or beats DeepSeek-V3.2 (~70%) on published cards — **Max is max context on the best evidenced single-GPU open coder**, not a separate weight class.
 
-**Suggested tweaks to existing config:**
-
-```yaml
-scaling:
-  scaledown_window_minutes: 2   # was 5 — bursty sessions
-  max_concurrent_inputs: 4      # was 100 — you run 2–4 parallel max
-
-vllm_args:
-  extra_args:
-    - "--max-model-len"
-    - "262144"   # or keep 131072 until snapshot/cold-start stable
-```
+**Copilot token budget (approx.):** max input ~229376, max output ~32768.
 
 ---
 
-## Expanded benchmark comparison
+## Frontier alternatives (not in this stack)
 
-Scores are **Pass@1 / resolve rate** unless noted. Harness and scaffold matter (e.g. SWE-Agent for Qwen3-Coder-Next). Use for **relative** ranking, not absolute guarantees.
+| Model | SWE-bench Verified (evidence) | Modal fit |
+|-------|------------------------------|-----------|
+| **DeepSeek-V4-Pro-Max** | **80.6%** (HF / Steel) | **8× B200** (~$50/hr); `deepseek_v4` parsers |
+| **MiniMax-M2.5** | **80.2%** (vendor; Claude Code scaffold) | **4× ~96 GB GPU**; 196K max per sequence |
+| **MiniMax-M2.7** | SWE-**Pro** 56.2% (not Verified on card) | Same 4× GPU pattern; **196K** cap |
 
-| Model | SWE-bench Verified | SWE-bench Pro | LiveCodeBench | HumanEval | HumanEval+ | Aider | Terminal-Bench 2.0 | Notes |
-|-------|-------------------|---------------|---------------|-----------|------------|-------|-------------------|--------|
-| **Claude Opus 4.7** (Adaptive, Max) | ~87.6% | — | — | — | — | — | — | BenchLM May 2026 |
-| **Claude Opus 4.6** (Adaptive, Max) | ~80.8% | — | — | — | — | — | — | cgft comparison |
-| **Claude Opus 4** | 72.5% | — | — | — | — | — | — | llm-stats vs Qwen 480B |
-| **Qwen3-Coder-Next-FP8** (80B / 3B active) | **70.6%** | 44.3% | ~60% | — | — | 66.2% | 36.2% | Best single-GPU coding pick |
-| **Qwen3-Coder-480B-A35B-Instruct** | 69.6% | — | **58.5%** | — | — | 61.8% | — | Needs 8× H200; better on puzzles than SWE-V |
-| **Qwen3-Coder-30B-A3B-Instruct** | — | — | 40.3% | — | — | — | — | Good mid tier; below Next on SWE |
-| **Qwen2.5-Coder-32B-Instruct** | — | — | 29.5% | — | — | 73.7 (whole) | — | Older SOTA open coder |
-| **Qwen2.5-Coder-7B-Instruct** | — | — | **37.6%** | **88.4%** | **84.1%** | — | — | Tier 1; strong HumanEval |
-| **Llama 3.1 70B Instruct** | ~42% | — | 23.2% | ~80.5% | — | — | — | Weak vs Qwen for agentic SWE |
-| **Llama 3.1 405B Instruct (INT4)** | — | — | — | — | — | — | — | **Does not fit** single B200 |
-
-**Reading the table:**
-
-- **Agentic repo work:** Prioritize **SWE-bench Verified** → Qwen3-Coder-Next on one GPU.
-- **LeetCode-style generation:** LiveCodeBench favors **480B**, not worth 8× GPU cost at this budget.
-- **Small fast completions:** Tier 1 wins on **HumanEval** and cost, not SWE-bench.
+Use hosted APIs or a separate multi-GPU deployment if you need these scores; they are out of scope for the three-tier scale-to-zero design.
 
 ---
 
 ## Monthly cost scenarios (after $30 credit)
 
-Estimated **GPU-hours/month** (inference + cold starts + scaledown idle):
+Illustrative **GPU-hours/month** (one tier warm at a time):
 
-| Scenario | GPU-hrs/mo | Tier 1 (L4) | Tier 2 (RTX PRO 6000) | Tier 3 (H200) |
-|----------|------------|-------------|------------------------|---------------|
+| Scenario | GPU-hrs/mo | Fast (L40S) | Daily (H200) | Max (H200) |
+|----------|------------|-------------|--------------|--------------|
 | Light | 3 | $0 | $0 | $0 |
 | Moderate | 6.5 | $0 | $0 | $0 |
-| Heavy | 15 | $0 | ~$15 | ~$38 |
+| Heavy (one tier) | 15 | ~$0 | ~$38 | ~$38 |
 
-Running **all three tiers** at moderate pace (rarely all warm at once): gross ~$55, out-of-pocket ~$25 if each sees ~6.5 hrs — still plausible inside a soft $50 cap if only one tier is warm per session.
-
----
-
-## Cold-start and idle-cost tuning
-
-Cold starts and **scaledown idle** dominate spend at low monthly GPU-hours. Apply regardless of tier.
-
-### 1. Shorten scaledown window (high impact)
-
-For bursty use (clusters of requests within an hour), **`scaledown_window_minutes: 2`** (from 5) keeps one container warm through a session without paying for long idle gaps between days.
-
-### 2. Modal GPU memory snapshots (high impact, alpha)
-
-vLLM **sleep mode** + Modal **`enable_memory_snapshot=True`** and **`experimental_options={"enable_gpu_snapshot": true}`** can cut cold starts from **~460s → ~70s** on large models (community benchmark on A100-80GB; see [Modal memory snapshots](https://modal.com/docs/guide/memory-snapshots) and [modal-examples `lfm_snapshot.py`](../modal-examples/06_gpu_and_ml/llm-serving/lfm_snapshot.py)).
-
-Pattern:
-
-- `@modal.enter(snap=True)` — start vLLM, warmup, put server to sleep, then snapshot.
-- `@modal.enter(snap=False)` — wake vLLM after restore.
-
-Weight download time is **not** eliminated by snapshots (HF cache on Modal Volume still helps).
-
-### 3. Right-size concurrency
-
-Set **`max_concurrent_inputs: 4`** (from 100) when you only run 2–4 parallel requests — frees KV budget for longer contexts.
-
-### 4. `fast_boot` vs throughput
-
-- **`fast_boot: true`** — faster cold start, lower sustained tok/s (good for experimentation).
-- **`fast_boot: false`** — production throughput; pair with snapshots rather than leaving containers warm 24/7.
-
-### 5. HF + vLLM caches
-
-Shared volumes (already in project defaults):
-
-- `huggingface-cache` — avoids re-downloading weights.
-- `vllm-cache` — JIT / compilation cache for faster warm starts after first boot.
+Running **Daily and Max** on separate apps both using H200: you only pay for the app that is scaled up; keep **one H200 deployment warm per session**.
 
 ---
 
-## What to ship (action list)
-
-| Step | Action |
-|------|--------|
-| A | `configs/qwen3_coder_next_rtx_pro_6000.yaml` — Tier 2 daily driver |
-| B | `configs/qwen3_coder_next_h200.yaml` — Tier 3 long context |
-| C | `configs/qwen2_5_coder_7b.yaml` — Tier 1 on L4 |
-| D | **Skip** 8× H200 / Qwen3-Coder-480B for this budget and workload |
-| E | Optional: implement GPU snapshot path in `main.py` / `server.py` when ready (see Modal examples) |
-
-Deploy:
+## Deploy
 
 ```bash
-modalstack deploy qwen3_coder_next_rtx_pro_6000   # Tier 2 — daily driver
-modalstack deploy qwen3_coder_next_h200           # Tier 3 — 256K context
-modalstack deploy qwen2_5_coder_7b                # Tier 1 — cheap & fast
+modalstack deploy qwen3_coder_30b_a3b_l40s      # Tier 1 — Fast
+modalstack deploy qwen3_coder_next_h200_daily   # Tier 2 — Daily (200K)
+modalstack deploy qwen3_coder_next_h200         # Tier 3 — Max (256K)
+
+modalstack run qwen3_coder_30b_a3b_l40s         # health check
 ```
+
+Point Copilot BYOK / gateway at the Modal URL; use **`coder-fast`**, **`coder-daily`**, or **`coder-max`** as the OpenAI `model` field (`served_name` in each config).
 
 ---
 
-## Caveats and open verification
+## Cold-start and ops tuning
+
+Shared across tiers (already in configs):
+
+- `scaledown_window_minutes: 2`
+- `max_concurrent_inputs: 4`
+- `--enable-prefix-caching` where supported
+
+Optional later: Modal GPU memory snapshots + vLLM sleep mode ([Modal memory snapshots](https://modal.com/docs/guide/memory-snapshots)).
+
+---
+
+## Caveats
 
 | Topic | Risk | Mitigation |
 |-------|------|------------|
-| **RTX PRO 6000 + Blackwell** | Needs recent vLLM + CUDA 13+ (`sm_120`) | Smoke-test deploy before making Tier 2 primary |
-| **Context on 96 GB** | 64–128K is **estimated**, not measured on this stack | Ramp `--max-model-len` 64K → 128K → 192K; watch OOM |
-| **Benchmark harness** | SWE scores use agent scaffolds | Expect lower raw model-only performance |
-| **Qwen2.5-Coder + Copilot** | Hermes parser emits `tool_calls: []` on text streams | Use `qwen2_5_coder` parser (vendored); health check rejects empty `tool_calls` |
-| **Modal credit** | $30/mo, no rollover | Monitor Usage & Billing if usage ramps |
-| **Opus gap** | ~10 pts SWE-V vs Opus 4.6 | Use hosted Opus for hardest tasks; self-host for volume/cost |
+| **200K / 262K on H200** | OOM if concurrency + context too high | Smoke-test; lower `max_concurrent_inputs` |
+| **L40S + 30B FP8** | First deploy may need vLLM/CUDA smoke test | `modalstack run qwen3_coder_30b_a3b_l40s` |
+| **Two H200 apps** | Same GPU list, separate Modal apps | Deploy both; only one active per session |
+| **Claude Code** | Needs Anthropic API or proxy | OpenAI-compatible Modal URL is not enough alone |
+| **Benchmark harness** | SWE scores use agent scaffolds | Expect gap vs IDE experience |
 
 ---
 
-## Optional: vision sidecar (not in core three tiers)
+## Retired configs
 
-If screenshot/UI understanding is needed from **your own clients** (not Cursor BYOK):
-
-- **Model:** `Qwen/Qwen3-VL-30B-A3B-Instruct-FP8`
-- **GPU:** L40S or H100
-- **Note:** Separate deployment; no single-GPU model is both top-tier coder and vision in 2026.
+| Removed | Reason |
+|---------|--------|
+| `qwen2_5_coder_7b.yaml` | Replaced by `qwen3_coder_30b_a3b_l40s.yaml` |
+| `qwen3_coder_next_rtx_pro_6000.yaml` | Daily moved to H200 @ 200K |
+| `models/vendor/qwen2_5_coder/` | Removed — Qwen2.5-Coder used a vendored tool parser; stack uses built-in `qwen3_coder` |
 
 ---
 
@@ -260,15 +194,13 @@ If screenshot/UI understanding is needed from **your own clients** (not Cursor B
 
 | Claim | Source |
 |-------|--------|
-| Modal $30/mo Starter credit | https://modal.com/pricing , https://modal.com/docs/guide/billing |
-| Llama 3.1 VRAM table (405B INT4 = 203 GB) | https://huggingface.co/blog/llama31 |
-| Qwen3-Coder-Next benchmarks | Qwen3-Coder-Next technical report; https://huggingface.co/Qwen/Qwen3-Coder-Next-FP8 |
-| Qwen2.5-Coder-7B LCB / HumanEval | Qwen2.5-Coder technical report (arXiv:2409.12186) |
-| Qwen3-Coder-480B vs Opus SWE-V | https://llm-stats.com/models/compare/claude-opus-4-20250514-vs-qwen3-coder-480b-a35b-instruct |
-| Opus 4.6 SWE-V 80.8% | https://cgft.io/compare/qwen3-5-397b-vs-claude-opus-4-6/ |
-| Cold-start ~70s with snapshots | https://logeshumapathi.com/blog/2026/05/17/vllm-serverless.html ; Modal docs |
-| vLLM Qwen3-Coder-480B 8× H200 | https://docs.vllm.ai/projects/recipes/en/stable/Qwen/Qwen3-Coder-480B-A35B.html |
+| Modal pricing / $30 credit | https://modal.com/pricing |
+| Qwen3-Coder-Next 70.6% SWE-V, 256K | https://huggingface.co/Qwen/Qwen3-Coder-Next-FP8 |
+| Qwen3-Coder-30B-A3B 256K, agentic | https://huggingface.co/Qwen/Qwen3-Coder-30B-A3B-Instruct |
+| 30B SWE 51.9% | https://nebius.com/blog/posts/openhands-trajectories-with-qwen3-coder-480b |
+| DeepSeek-V4-Pro 80.6% | https://huggingface.co/deepseek-ai/DeepSeek-V4-Pro |
+| vLLM `qwen3_coder` parser | https://github.com/vllm-project/recipes |
 
 ---
 
-*Last updated: May 2026. Revisit when Modal GPU pricing, vLLM versions, or Qwen checkpoint releases change materially.*
+*Last updated: May 2026.*

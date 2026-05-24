@@ -49,10 +49,7 @@ This spins up a fresh container, runs a `/health` check, then sends a single str
 
 ### Deployment planning (GPU / model tiers)
 
-For Modal GPU and model tier recommendations (three-tier stack, cost estimates, benchmarks), see:
-
-- [docs/modal-llm-deployment-recommendation.md](docs/modal-llm-deployment-recommendation.md) — full write-up
-- [canvases/final-recommendation.canvas.tsx](canvases/final-recommendation.canvas.tsx) — interactive charts and comparison (open in Cursor)
+For Modal GPU and model tier recommendations (three-tier stack, cost estimates, benchmarks), see [docs/modal-llm-deployment-recommendation.md](docs/modal-llm-deployment-recommendation.md).
 
 ---
 
@@ -67,24 +64,20 @@ modal-stack/
 │
 ├── configs/
 │   ├── gemma4_26b.yaml                  # Gemma 4 26B deployment config
-│   ├── qwen2_5_coder_7b.yaml            # Tier 1 — Qwen2.5-Coder-7B on L4
-│   ├── qwen3_coder_next_rtx_pro_6000.yaml # Tier 2 — Qwen3-Coder-Next on RTX PRO 6000
-│   ├── qwen3_coder_next_h200.yaml         # Tier 3 — Qwen3-Coder-Next on H200 (256K)
-│   └── _example.yaml                      # Annotated template for new models
+│   ├── qwen3_coder_30b_a3b_l40s.yaml       # Tier 1 — Fast (128K) on L40S
+│   ├── qwen3_coder_next_h200_daily.yaml    # Tier 2 — Daily (200K) on H200
+│   ├── qwen3_coder_next_h200.yaml          # Tier 3 — Max (256K) on H200
+│   └── _example.yaml                       # Annotated template for new models
 │
 ├── docs/
-│   └── modal-llm-deployment-recommendation.md
-│
-├── canvases/
-│   └── final-recommendation.canvas.tsx
+│   ├── modal-llm-deployment-recommendation.md            # Current tier recommendation
+│   └── modal-llm-deployment-recommendation.md.deprecated # Superseded plan (records only)
 │
 └── models/
     ├── config.py         # Pydantic schema — validates YAML at load time
     ├── image.py          # Modal container Image factory
     ├── server.py         # Modal App factory + vLLM command builder
-    ├── health.py         # Health check + stream compatibility checks
-    └── vendor/
-        └── qwen2_5_coder/  # Vendored Qwen2.5-Coder tool parser + chat template
+    └── health.py         # Health check + streaming test completion
 ```
 
 ---
@@ -263,12 +256,13 @@ extra_args:
 extra_args:
   - "--enable-expert-parallel"
 
-# Qwen2.5-Coder tool calling
-# Use the vendored qwen2_5_coder parser and chat template (not hermes). server.py auto-injects plugin and --chat-template when qwen2_5_coder is set. Required for VS Code Copilot tool_choice=auto on Tier 1.
+# Qwen3-Coder tool calling
+# Enable tool_choice=auto with vLLM's built-in qwen3_coder parser (Qwen3-Coder-Next, Qwen3-Coder-30B-A3B, etc.). Pair with --enable-expert-parallel on MoE variants.
 extra_args:
+  - "--enable-expert-parallel"
   - "--enable-auto-tool-choice"
   - "--tool-call-parser"
-  - "qwen2_5_coder"
+  - "qwen3_coder"
 
 # Prefix caching
 # Cache KV blocks for common prefixes to speed up repeated prompts.

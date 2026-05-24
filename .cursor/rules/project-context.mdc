@@ -22,8 +22,7 @@ modal-stack/
     config.py          # ModelConfig + from_yaml / validators
     image.py           # Modal container Image factory (vLLM, future SGLang)
     server.py          # AppResources factory + vLLM command builder
-    health.py          # Health check + Copilot-compat stream assertions
-    vendor/qwen2_5_coder/  # Vendored Qwen2.5-Coder tool parser + chat template (Apache-2.0)
+    health.py          # Health check + streaming test completion
 ```
 
 ## How It Works
@@ -53,9 +52,9 @@ modalstack generate-docs          # Regenerate README config reference from sche
 - **Custom config behavior** (e.g. `from_yaml`, default `app_name`) goes in `models/config.py` only
 - **Container image logic** goes in `models/image.py` (dispatches on `engine.type`)
 - **vLLM command construction** lives in `models/server.py` (`build_vllm_cmd`)
-- **Qwen2.5-Coder tool calling:** set `--tool-call-parser qwen2_5_coder` in YAML; `server.py` auto-injects the vendored `--tool-parser-plugin` and `--chat-template` paths. Do not use `hermes` on Qwen2.5-Coder (wrong format; breaks VS Code Copilot streaming).
+- **Qwen3-Coder tool calling:** set `--tool-call-parser qwen3_coder` and `--enable-auto-tool-choice` in YAML (see tier configs); use `--enable-expert-parallel` on MoE variants.
 - **New engine support** (e.g. SGLang): add to `image.py`, `server.py`, and extend the `Literal` in `config.py`
-- **Never hardcode model-specific values** in Python -- put them in YAML configs (except pinned third-party parser files under `models/vendor/`)
+- **Never hardcode model-specific values** in Python — put them in YAML configs
 
 ## Dependencies
 

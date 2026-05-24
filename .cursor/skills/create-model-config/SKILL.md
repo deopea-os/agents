@@ -50,7 +50,7 @@ gpu:
 
 Use a short, descriptive stem: `<model>_<variant>.yaml`
 
-Examples: `gemma4_26b.yaml`, `qwen3_coder_next_h200.yaml`, `llama3_8b.yaml`
+Examples: `gemma4_26b.yaml`, `qwen3_coder_next_h200.yaml`, `qwen3_coder_30b_a3b_l40s.yaml`
 
 ## Creation Steps
 
@@ -190,29 +190,15 @@ extra_args:
   - "gemma4"
 ```
 
-**Qwen2.5-Coder tool calling** (Tier 1, VS Code Copilot BYOK — use `configs/qwen2_5_coder_7b.yaml` as reference):
+**Qwen3-Coder** (Fast / Daily / Max — `qwen3_coder_30b_a3b_l40s.yaml`, `qwen3_coder_next_h200*.yaml`):
 
 ```yaml
-model:
-  name: "Qwen/Qwen2.5-Coder-7B-Instruct"
-  served_name: "coder-fast"   # OpenAI model id for clients
-
 vllm_args:
   extra_args:
+    - "--enable-expert-parallel"
     - "--enable-auto-tool-choice"
     - "--tool-call-parser"
-    - "qwen2_5_coder"
-```
-
-- Do **not** use `hermes` on Qwen2.5-**Coder** — wrong output format; Hermes also streams `tool_calls: []` on plain text, which breaks Copilot (“no response returned”).
-- `models/server.py` auto-adds `--tool-parser-plugin` and `--chat-template` pointing at `models/vendor/qwen2_5_coder/` (vendored from [hanXen/vllm-qwen2.5-coder-tool-parser](https://github.com/hanXen/vllm-qwen2.5-coder-tool-parser)).
-- **Qwen3-Coder-Next** (Tier 2/3): use built-in `qwen3_coder` parser, not `qwen2_5_coder`.
-
-**MoE expert parallelism** (e.g. Qwen3-Coder-Next):
-
-```yaml
-extra_args:
-  - "--enable-expert-parallel"
+    - "qwen3_coder"
 ```
 
 **Text-only** (disable multimodal):

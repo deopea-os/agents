@@ -1,13 +1,13 @@
 # yaml-language-server: $schema=../schemas/model-config.schema.json
-# Tier 1 — cheap & fast (see docs/modal-llm-deployment-recommendation.md)
+# Tier 1 — Fast: speed + 128K agentic context (see docs/modal-llm-deployment-recommendation.md)
 app_name: "coder-fast"
 
 model:
-  name: "Qwen/Qwen2.5-Coder-7B-Instruct"
+  name: "Qwen/Qwen3-Coder-30B-A3B-Instruct-FP8"
   served_name: "coder-fast"
 
 gpu:
-  type: "L4"
+  type: "L40S"
   count: 1
 
 scaling:
@@ -20,11 +20,12 @@ vllm_args:
   async_scheduling: true
   extra_args:
     - "--max-model-len"
-    - "32768"
-    - "--enable-prefix-caching"
+    - "131072"
+    - "--enable-expert-parallel"
     - "--enable-auto-tool-choice"
     - "--tool-call-parser"
-    - "qwen2_5_coder"
+    - "qwen3_coder"
+    - "--enable-prefix-caching"
 
 image:
   base: "nvidia/cuda:12.9.0-devel-ubuntu22.04"

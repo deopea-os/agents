@@ -366,12 +366,13 @@
                 "example": ["--enable-expert-parallel"]
               },
               {
-                "name": "Qwen2.5-Coder tool calling",
-                "description": "Use the vendored qwen2_5_coder parser and chat template (not hermes). server.py auto-injects plugin and --chat-template when qwen2_5_coder is set. Required for VS Code Copilot tool_choice=auto on Tier 1.",
+                "name": "Qwen3-Coder tool calling",
+                "description": "Enable tool_choice=auto with vLLM's built-in qwen3_coder parser (Qwen3-Coder-Next, Qwen3-Coder-30B-A3B, etc.). Pair with --enable-expert-parallel on MoE variants.",
                 "example": [
+                  "--enable-expert-parallel",
                   "--enable-auto-tool-choice",
                   "--tool-call-parser",
-                  "qwen2_5_coder"
+                  "qwen3_coder"
                 ]
               },
               {
