@@ -33,6 +33,11 @@ __all__ = [
 ]
 
 
+def _slug_from_model_name(name: str) -> str:
+    """e.g. 'google/gemma-4-26B-A4B-it' -> 'gemma-4-26b-a4b-it'"""
+    return name.split("/")[-1].lower().replace("_", "-")
+
+
 def apply_auth_token_name(config: ModelConfig, token_name: str | None) -> ModelConfig:
     """Set auth from a Modal Secret name (CLI/env). Overrides auth in YAML when set."""
     if not token_name:
@@ -42,11 +47,15 @@ def apply_auth_token_name(config: ModelConfig, token_name: str | None) -> ModelC
 
 class ModelConfig(ModelConfigBase):
     @model_validator(mode="after")
-    def set_default_app_name(self) -> ModelConfig:
+    def set_defaults_from_model_name(self) -> ModelConfig:
+        slug = _slug_from_model_name(self.model.name)
+        updates: dict = {}
         if self.app_name is None:
-            # e.g. "google/gemma-4-26B-A4B-it" -> "gemma-4-26b-a4b-it"
-            slug = self.model.name.split("/")[-1].lower().replace("_", "-")
-            self.app_name = slug
+            updates["app_name"] = slug
+        if self.model.served_name is None:
+            updates["model"] = self.model.model_copy(update={"served_name": slug})
+        if updates:
+            return self.model_copy(update=updates)
         return self
 
     @classmethod

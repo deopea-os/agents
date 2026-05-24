@@ -4,7 +4,7 @@ app_name: "coder-daily"
 
 model:
   name: "Qwen/Qwen3-Coder-Next-FP8"
-  served_name: "llm"
+  served_name: "coder-daily"
 
 gpu:
   type: "RTX-PRO-6000"

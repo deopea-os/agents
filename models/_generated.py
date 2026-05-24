@@ -42,9 +42,9 @@ class ModelSection(BaseModel):
         pattern='^[0-9a-f]{7,40}$',
     )
     served_name: str | None = Field(
-        'llm',
-        description="The model name that clients send in the OpenAI API 'model' field when making requests. Using a consistent short name like 'llm' allows swapping the underlying model without changing client code.",
-        examples=['llm', 'gpt-4', 'claude'],
+        None,
+        description="The model name that clients send in the OpenAI API 'model' field when making requests. If omitted, defaults to a kebab-case slug derived from model.name (e.g. 'Qwen/Qwen2.5-Coder-7B-Instruct' becomes 'qwen2.5-coder-7b-instruct'). Set explicitly to use a stable alias across model swaps.",
+        examples=['qwen2.5-coder-7b-instruct', 'gemma-4-26b-a4b-it', 'llm'],
     )
 
 

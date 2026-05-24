@@ -19,7 +19,7 @@ model:
   # Find the latest commit hash on the HF model page > Files > Commits.
   # revision: "abc123..."
 
-  # OPTIONAL -- default: "llm"
+  # OPTIONAL -- default: kebab-case slug from model.name (e.g. qwen2.5-coder-7b-instruct)
   # The model name clients send in the OpenAI API `model` field.
   # served_name: "llm"
 

@@ -24,13 +24,13 @@ Only `model.name` (Hugging Face repo ID) is required. Gather from the user:
 
 Use when the user does not specify a GPU. Values must match the schema enum (see [Modal GPU docs](https://modal.com/docs/guide/gpu)).
 
-| Model size | GPU type | Count | Notes |
-|------------|----------|-------|-------|
-| < 8B | `A10` or `A100` | 1 | `L4` / `L40S` also work for small inference workloads |
-| 8B – 14B | `A100` | 1 | |
-| 14B – 30B | `H100` | 1 | May be upgraded to `H200` at no extra cost |
-| 30B – 70B | `H200` | 1–2 | Tensor parallelism for dense ~70B |
-| 70B+ / large MoE | `H200` or `B200` | 2–8 | `B200+` opts into B200/B300 pool |
+| Model size       | GPU type         | Count | Notes                                                 |
+| ---------------- | ---------------- | ----- | ----------------------------------------------------- |
+| < 8B             | `A10` or `A100`  | 1     | `L4` / `L40S` also work for small inference workloads |
+| 8B – 14B         | `A100`           | 1     |                                                       |
+| 14B – 30B        | `H100`           | 1     | May be upgraded to `H200` at no extra cost            |
+| 30B – 70B        | `H200`           | 1–2   | Tensor parallelism for dense ~70B                     |
+| 70B+ / large MoE | `H200` or `B200` | 2–8   | `B200+` opts into B200/B300 pool                      |
 
 **Valid `gpu.type` strings:** `T4`, `L4`, `A10`, `L40S`, `A100`, `A100-40GB`, `A100-80GB`, `RTX-PRO-6000`, `H100`, `H100!`, `H200`, `B200`, `B200+`
 
@@ -61,10 +61,13 @@ Examples: `gemma4_26b.yaml`, `qwen3_coder_next_h200.yaml`, `llama3_8b.yaml`
    # yaml-language-server: $schema=../schemas/model-config.schema.json
    ```
 4. Validate:
+
    ```bash
    modalstack run <name>   # optional: full Modal health check
    ```
+
    Or validate locally without Modal:
+
    ```bash
    python -c "
    from pathlib import Path
@@ -98,7 +101,7 @@ app_name: "model-shortname"
 model:
   name: "org/Model-Name"
   revision: "abc123def456..."
-  served_name: "llm"
+  # served_name defaults to kebab-case slug from model.name if omitted
 
 gpu:
   type: "H100"
@@ -152,27 +155,27 @@ For local health checks with auth, also export the token value: `export AUTH_TOK
 
 Applied when a field is omitted (from schema / generated models):
 
-| Field | Default |
-|-------|---------|
-| `app_name` | Slug from `model.name` (e.g. `llama-3.1-8b-instruct`) |
-| `model.served_name` | `"llm"` |
-| `engine.type` | `"vllm"` |
-| `engine.version` | `"0.19.0"` |
-| `engine.extra_pip` | `[]` |
-| `gpu.type` | `"H200"` |
-| `gpu.count` | `1` |
-| `scaling.scaledown_window_minutes` | `15` |
-| `scaling.timeout_minutes` | `10` |
-| `scaling.max_concurrent_inputs` | `100` |
-| `scaling.fast_boot` | `false` |
-| `vllm_args.async_scheduling` | `true` |
-| `vllm_args.extra_args` | `[]` |
-| `image.base` | `"nvidia/cuda:12.9.0-devel-ubuntu22.04"` |
-| `image.python` | `"3.12"` |
-| `image.env` | `{}` |
-| `volumes.hf_cache` | `"huggingface-cache"` (shared) |
-| `volumes.vllm_cache` | `"vllm-cache"` (shared) |
-| `auth` | omitted (no auth) |
+| Field                              | Default                                               |
+| ---------------------------------- | ----------------------------------------------------- |
+| `app_name`                         | Slug from `model.name` (e.g. `llama-3.1-8b-instruct`) |
+| `model.served_name`                | kebab-case slug from `model.name`                     |
+| `engine.type`                      | `"vllm"`                                              |
+| `engine.version`                   | `"0.19.0"`                                            |
+| `engine.extra_pip`                 | `[]`                                                  |
+| `gpu.type`                         | `"H200"`                                              |
+| `gpu.count`                        | `1`                                                   |
+| `scaling.scaledown_window_minutes` | `15`                                                  |
+| `scaling.timeout_minutes`          | `10`                                                  |
+| `scaling.max_concurrent_inputs`    | `100`                                                 |
+| `scaling.fast_boot`                | `false`                                               |
+| `vllm_args.async_scheduling`       | `true`                                                |
+| `vllm_args.extra_args`             | `[]`                                                  |
+| `image.base`                       | `"nvidia/cuda:12.9.0-devel-ubuntu22.04"`              |
+| `image.python`                     | `"3.12"`                                              |
+| `image.env`                        | `{}`                                                  |
+| `volumes.hf_cache`                 | `"huggingface-cache"` (shared)                        |
+| `volumes.vllm_cache`               | `"vllm-cache"` (shared)                               |
+| `auth`                             | omitted (no auth)                                     |
 
 ## Common `extra_args` Patterns
 

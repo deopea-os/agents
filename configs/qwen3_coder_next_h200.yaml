@@ -4,7 +4,7 @@ app_name: "coder-long-context"
 
 model:
   name: "Qwen/Qwen3-Coder-Next-FP8"
-  served_name: "llm"
+  served_name: "coder-long-context"
 
 gpu:
   type: "H200"

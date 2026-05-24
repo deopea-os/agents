@@ -166,7 +166,7 @@ All fields except `model.name` are optional. Defaults are shown below.
 | ----- | -------- | ------- | ----------- |
 | `name` | **Yes** | — | Hugging Face repository ID for the model weights. |
 | `revision` | No | `null` | Git commit hash to pin model weights to a specific version. |
-| `served_name` | No | `"llm"` | The model name that clients send in the OpenAI API 'model' field when making requests. |
+| `served_name` | No | `null` | The model name that clients send in the OpenAI API 'model' field when making requests. |
 
 ### `engine`
 
@@ -331,7 +331,7 @@ client = OpenAI(
 )
 
 response = client.chat.completions.create(
-    model="llm",  # matches model.served_name in your config
+    model="qwen2.5-coder-7b-instruct",  # matches model.served_name (default: kebab-case slug from model.name)
     messages=[{"role": "user", "content": "Hello!"}],
     stream=True,
 )
@@ -346,13 +346,13 @@ The `/docs` route on the URL serves interactive Swagger UI for exploring the API
 
 ## Editing the Infrastructure
 
-| What to change                                    | Where                                                                                      |
-| ------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| What to change                                    | Where                                                                                              |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
 | Add a config field or change a default            | `schemas/model-config.schema.json`, then `modalstack generate-config` + `modalstack generate-docs` |
-| Change how the container image is built           | `models/image.py`                                                                          |
-| Change GPU, volumes, or vLLM command construction | `models/server.py`                                                                         |
-| Change the health check / test request            | `models/health.py`                                                                         |
-| Add SGLang engine support                         | `models/image.py` + `models/server.py` + extend `engine.type` in the JSON schema          |
+| Change how the container image is built           | `models/image.py`                                                                                  |
+| Change GPU, volumes, or vLLM command construction | `models/server.py`                                                                                 |
+| Change the health check / test request            | `models/health.py`                                                                                 |
+| Add SGLang engine support                         | `models/image.py` + `models/server.py` + extend `engine.type` in the JSON schema                   |
 
 **Never hardcode model-specific values in Python.** All model configuration belongs in `configs/*.yaml`.
 

@@ -4,7 +4,6 @@ app_name: "gemma4-26b"
 model:
   name: "google/gemma-4-26B-A4B-it"
   revision: "47b6801b24d15ff9bcd8c96dfaea0be9ed3a0301"
-  served_name: "llm"
 
 engine:
   type: vllm
