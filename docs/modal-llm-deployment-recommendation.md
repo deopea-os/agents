@@ -75,8 +75,10 @@ Modal may **auto-upgrade** H100 → H200 at the same rate; H200! pins H100 witho
 | **VRAM** | ~14 GB BF16 weights; ample KV headroom |
 | **Context** | 128K native; **32K reliable** for daily use |
 | **Deploy name** | `qwen2_5_coder_7b` ([`configs/qwen2_5_coder_7b.yaml`](../configs/qwen2_5_coder_7b.yaml)) |
+| **OpenAI model id** | `coder-fast` (`served_name` in config — use this in VS Code / Copilot BYOK) |
+| **Tool calling** | `--tool-call-parser qwen2_5_coder` + vendored plugin/chat template ([hanXen/vllm-qwen2.5-coder-tool-parser](https://github.com/hanXen/vllm-qwen2.5-coder-tool-parser), pinned under `models/vendor/qwen2_5_coder/`). Do **not** use `hermes` on Qwen2.5-Coder. |
 
-**Best for:** Autocomplete, fill-in-the-middle, scripts, structured JSON, quick edits.
+**Best for:** Autocomplete, fill-in-the-middle, scripts, structured JSON, quick edits, lightweight Copilot/agent tool use.
 
 **Gross @ 6.5 GPU-hrs/mo:** ~$5 · **After $30 credit:** $0
 
@@ -238,6 +240,7 @@ modalstack deploy qwen2_5_coder_7b                # Tier 1 — cheap & fast
 | **RTX PRO 6000 + Blackwell** | Needs recent vLLM + CUDA 13+ (`sm_120`) | Smoke-test deploy before making Tier 2 primary |
 | **Context on 96 GB** | 64–128K is **estimated**, not measured on this stack | Ramp `--max-model-len` 64K → 128K → 192K; watch OOM |
 | **Benchmark harness** | SWE scores use agent scaffolds | Expect lower raw model-only performance |
+| **Qwen2.5-Coder + Copilot** | Hermes parser emits `tool_calls: []` on text streams | Use `qwen2_5_coder` parser (vendored); health check rejects empty `tool_calls` |
 | **Modal credit** | $30/mo, no rollover | Monitor Usage & Billing if usage ramps |
 | **Opus gap** | ~10 pts SWE-V vs Opus 4.6 | Use hosted Opus for hardest tasks; self-host for volume/cost |
 

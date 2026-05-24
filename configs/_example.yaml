@@ -78,9 +78,11 @@ vllm_args:
   # Common options:
   #   --max-model-len <int>         Limit context window (reduces VRAM usage)
   #   --gpu-memory-utilization 0.9  Fraction of GPU VRAM to use (default 0.9)
-  #   --enable-auto-tool-choice     Enable tool/function calling
+  #   --enable-auto-tool-choice     Required for tool_choice=auto (e.g. VS Code Copilot)
+  #   --tool-call-parser <name>     Pair with the above:
+  #                                 qwen2_5_coder (Qwen2.5-Coder — vendored plugin; see qwen2_5_coder_7b.yaml)
+  #                                 hermes (Qwen2.5 non-Coder), qwen3_coder (Qwen3-Coder-Next), gemma4, etc.
   #   --reasoning-parser <name>     Enable chain-of-thought parsing
-  #   --tool-call-parser <name>     Parser for structured tool call outputs
   #   --trust-remote-code           Required for some community models
   #   --limit-mm-per-prompt <json>  Restrict multimodal inputs per request
   # extra_args:

@@ -22,6 +22,9 @@ vllm_args:
     - "--max-model-len"
     - "32768"
     - "--enable-prefix-caching"
+    - "--enable-auto-tool-choice"
+    - "--tool-call-parser"
+    - "qwen2_5_coder"
 
 image:
   base: "nvidia/cuda:12.9.0-devel-ubuntu22.04"

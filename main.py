@@ -118,4 +118,10 @@ async def test():
     import os
 
     api_key = os.environ.get("AUTH_TOKEN") if config.auth else None
-    await run_health_check(serve, _served_name, _timeout_s, api_key=api_key)
+    await run_health_check(
+        serve,
+        _served_name,
+        _timeout_s,
+        api_key=api_key,
+        reject_empty_tool_calls="qwen2_5_coder" in _cmd,
+    )

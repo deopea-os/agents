@@ -179,7 +179,7 @@ Applied when a field is omitted (from schema / generated models):
 
 ## Common `extra_args` Patterns
 
-**Reasoning / tool-calling** (Gemma 4, DeepSeek R1, Qwen Coder, etc.):
+**Reasoning / tool-calling** (Gemma 4, DeepSeek R1, etc.):
 
 ```yaml
 extra_args:
@@ -189,6 +189,24 @@ extra_args:
   - "--tool-call-parser"
   - "gemma4"
 ```
+
+**Qwen2.5-Coder tool calling** (Tier 1, VS Code Copilot BYOK — use `configs/qwen2_5_coder_7b.yaml` as reference):
+
+```yaml
+model:
+  name: "Qwen/Qwen2.5-Coder-7B-Instruct"
+  served_name: "coder-fast"   # OpenAI model id for clients
+
+vllm_args:
+  extra_args:
+    - "--enable-auto-tool-choice"
+    - "--tool-call-parser"
+    - "qwen2_5_coder"
+```
+
+- Do **not** use `hermes` on Qwen2.5-**Coder** — wrong output format; Hermes also streams `tool_calls: []` on plain text, which breaks Copilot (“no response returned”).
+- `models/server.py` auto-adds `--tool-parser-plugin` and `--chat-template` pointing at `models/vendor/qwen2_5_coder/` (vendored from [hanXen/vllm-qwen2.5-coder-tool-parser](https://github.com/hanXen/vllm-qwen2.5-coder-tool-parser)).
+- **Qwen3-Coder-Next** (Tier 2/3): use built-in `qwen3_coder` parser, not `qwen2_5_coder`.
 
 **MoE expert parallelism** (e.g. Qwen3-Coder-Next):
 

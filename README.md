@@ -82,7 +82,9 @@ modal-stack/
     ├── config.py         # Pydantic schema — validates YAML at load time
     ├── image.py          # Modal container Image factory
     ├── server.py         # Modal App factory + vLLM command builder
-    └── health.py         # Health check local_entrypoint
+    ├── health.py         # Health check + stream compatibility checks
+    └── vendor/
+        └── qwen2_5_coder/  # Vendored Qwen2.5-Coder tool parser + chat template
 ```
 
 ---
@@ -260,6 +262,13 @@ extra_args:
 # Enable expert parallelism for Mixture-of-Experts models (e.g. Qwen3-Coder, Mixtral).
 extra_args:
   - "--enable-expert-parallel"
+
+# Qwen2.5-Coder tool calling
+# Use the vendored qwen2_5_coder parser and chat template (not hermes). server.py auto-injects plugin and --chat-template when qwen2_5_coder is set. Required for VS Code Copilot tool_choice=auto on Tier 1.
+extra_args:
+  - "--enable-auto-tool-choice"
+  - "--tool-call-parser"
+  - "qwen2_5_coder"
 
 # Prefix caching
 # Cache KV blocks for common prefixes to speed up repeated prompts.

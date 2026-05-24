@@ -10,6 +10,14 @@ from .image import build_image
 VLLM_PORT = 8000
 MINUTES = 60
 
+# Vendored under models/vendor/ and baked at /root/models (see main.py add_local_dir).
+QWEN25_CODER_PARSER_PLUGIN = (
+    "/root/models/vendor/qwen2_5_coder/qwen2_5_coder_tool_parser.py"
+)
+QWEN25_CODER_CHAT_TEMPLATE = (
+    "/root/models/vendor/qwen2_5_coder/tool_chat_template_qwen2_5_coder.jinja"
+)
+
 
 @dataclass
 class AppResources:
@@ -63,6 +71,13 @@ def build_vllm_cmd(config: ModelConfig) -> list[str]:
     cmd.append("--enforce-eager" if config.scaling.fast_boot else "--no-enforce-eager")
 
     cmd.extend(v.extra_args)
+
+    if "qwen2_5_coder" in cmd:
+        if QWEN25_CODER_PARSER_PLUGIN not in cmd:
+            idx = cmd.index("--tool-call-parser")
+            cmd[idx:idx] = ["--tool-parser-plugin", QWEN25_CODER_PARSER_PLUGIN]
+        if "--chat-template" not in cmd:
+            cmd.extend(["--chat-template", QWEN25_CODER_CHAT_TEMPLATE])
 
     return cmd
 
