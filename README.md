@@ -44,6 +44,13 @@ agents run gemma4_26b
 
 This spins up a fresh container, runs a `/health` check, then sends a single streaming chat completion request.
 
+### Deployment planning (GPU / model tiers)
+
+For Modal GPU and model tier recommendations (three-tier stack, cost estimates, benchmarks), see:
+
+- [docs/modal-llm-deployment-recommendation.md](docs/modal-llm-deployment-recommendation.md) — full write-up
+- [canvases/final-recommendation.canvas.tsx](canvases/final-recommendation.canvas.tsx) — interactive charts and comparison (open in Cursor)
+
 ---
 
 ## Project Structure
@@ -56,8 +63,17 @@ agents/
 ├── requirements.txt      # Pinned requirements (derived from pyproject.toml)
 │
 ├── configs/
-│   ├── gemma4_26b.yaml   # Gemma 4 26B deployment config
-│   └── _example.yaml     # Annotated template for new models
+│   ├── gemma4_26b.yaml                  # Gemma 4 26B deployment config
+│   ├── qwen2_5_coder_7b.yaml            # Tier 1 — Qwen2.5-Coder-7B on L4
+│   ├── qwen3_coder_next_rtx_pro_6000.yaml # Tier 2 — Qwen3-Coder-Next on RTX PRO 6000
+│   ├── qwen3_coder_next_h200.yaml         # Tier 3 — Qwen3-Coder-Next on H200 (256K)
+│   └── _example.yaml                      # Annotated template for new models
+│
+├── docs/
+│   └── modal-llm-deployment-recommendation.md
+│
+├── canvases/
+│   └── final-recommendation.canvas.tsx
 │
 └── models/
     ├── config.py         # Pydantic schema — validates YAML at load time
@@ -316,11 +332,11 @@ The `/docs` route on the URL serves interactive Swagger UI for exploring the API
 
 | What to change                                    | Where                                                                                      |
 | ------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| Add a config field or change a default            | `models/config.py`                                                                         |
+| Add a config field or change a default            | `schemas/model-config.schema.json`, then `agents generate-config` + `agents generate-docs` |
 | Change how the container image is built           | `models/image.py`                                                                          |
 | Change GPU, volumes, or vLLM command construction | `models/server.py`                                                                         |
 | Change the health check / test request            | `models/health.py`                                                                         |
-| Add SGLang engine support                         | `models/image.py` + `models/server.py` + add `"sglang"` to `Literal` in `models/config.py` |
+| Add SGLang engine support                         | `models/image.py` + `models/server.py` + extend `engine.type` in the JSON schema          |
 
 **Never hardcode model-specific values in Python.** All model configuration belongs in `configs/*.yaml`.
 

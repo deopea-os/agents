@@ -16,8 +16,10 @@ agents/
   configs/             # Per-model YAML configs (one file per deployment)
     gemma4_26b.yaml    # Example: Gemma 4 26B on H200
     _example.yaml      # Annotated template for adding new models
+  schemas/             # JSON Schema (source of truth for config shape)
   models/              # Core Python package
-    config.py          # Pydantic schema -- validates YAML at load time
+    _generated.py      # Auto-generated Pydantic models (do not edit)
+    config.py          # ModelConfig + from_yaml / validators
     image.py           # Modal container Image factory (vLLM, future SGLang)
     server.py          # AppResources factory + vLLM command builder
     health.py          # Health check local_entrypoint
@@ -33,8 +35,10 @@ agents/
 ## Key Commands
 
 ```bash
-agents deploy <name>   # Deploy to Modal
-agents run <name>      # Spin up + health check
+agents deploy <name>          # Deploy to Modal
+agents run <name>             # Spin up + health check
+agents generate-config        # Regenerate models/_generated.py from schema
+agents generate-docs          # Regenerate README config reference from schema
 ```
 
 ## Adding a New Model
@@ -44,7 +48,8 @@ agents run <name>      # Spin up + health check
 
 ## Editing Guidelines
 
-- **Config schema changes** go in `models/config.py` (Pydantic models with defaults)
+- **Config schema changes** go in `schemas/model-config.schema.json`, then run `agents generate-config` and `agents generate-docs`
+- **Custom config behavior** (e.g. `from_yaml`, default `app_name`) goes in `models/config.py` only
 - **Container image logic** goes in `models/image.py` (dispatches on `engine.type`)
 - **vLLM command construction** lives in `models/server.py` (`_build_vllm_cmd`)
 - **New engine support** (e.g. SGLang): add to `image.py`, `server.py`, and extend the `Literal` in `config.py`

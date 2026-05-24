@@ -1,10 +1,10 @@
 # yaml-language-server: $schema=../schemas/model-config.schema.json
 # Template for adding a new model config.
 # Copy this file to configs/<your_model>.yaml and fill in the values.
-# Then deploy with: modal deploy main.py -- --config <your_model>
+# Then deploy with: agents deploy <your_model>
 #
 # Fields marked REQUIRED must be set. All others are OPTIONAL and will
-# use the default shown if omitted. See models/config.py for the schema.
+# use the default shown if omitted. See schemas/model-config.schema.json for the schema.
 
 # OPTIONAL -- defaults to a slug derived from model.name
 # e.g. "meta-llama/Llama-3.1-8B-Instruct" -> "llama-3.1-8b-instruct"
@@ -40,8 +40,9 @@ engine:
 
 gpu:
   # OPTIONAL -- default: "H200"
-  # GPU type. Common options: A10G, A100, H100, H200, B200.
-  # See https://modal.com/docs/guide/gpu for available types and pricing.
+  # GPU type (string) or fallback list. Options: T4, L4, A10, L40S, A100,
+  # A100-40GB, A100-80GB, RTX-PRO-6000, H100, H100!, H200, B200, B200+.
+  # See https://modal.com/docs/guide/gpu for details and pricing.
   type: "H100"
 
   # OPTIONAL -- default: 1

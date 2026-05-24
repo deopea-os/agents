@@ -1,29 +1,26 @@
 # yaml-language-server: $schema=../schemas/model-config.schema.json
-app_name: "qwen3-coder-next"
+# Tier 1 — cheap & fast (see docs/modal-llm-deployment-recommendation.md)
+app_name: "coder-fast"
 
 model:
-  name: "Qwen/Qwen3-Coder-Next-FP8"
+  name: "Qwen/Qwen2.5-Coder-7B-Instruct"
   served_name: "llm"
 
 gpu:
-  type: "H200"
+  type: "L4"
   count: 1
 
 scaling:
-  scaledown_window_minutes: 5
-  timeout_minutes: 20
-  max_concurrent_inputs: 100
+  scaledown_window_minutes: 2
+  timeout_minutes: 10
+  max_concurrent_inputs: 4
   fast_boot: false
 
 vllm_args:
   async_scheduling: true
   extra_args:
     - "--max-model-len"
-    - "131072"
-    - "--enable-expert-parallel"
-    - "--enable-auto-tool-choice"
-    - "--tool-call-parser"
-    - "qwen3_coder"
+    - "32768"
     - "--enable-prefix-caching"
 
 image:
