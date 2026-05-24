@@ -77,6 +77,15 @@ _served_name = config.model.served_name
 _timeout_s = _r.timeout
 
 
+# Always attach exactly one Secret so deploy-time dependency count is stable.
+# Omitting `secrets` when auth is off and adding it when auth is on causes
+# "Function has N dependencies but container got N+1 object ids" on cold start.
+_function_secrets: list[modal.Secret] = (
+    [modal.Secret.from_name(_r.auth_secret_name)]
+    if _r.auth_secret_name
+    else [modal.Secret.from_dict({})]
+)
+
 _function_kwargs: dict = {
     "image": _image,
     "gpu": _r.gpu,
@@ -86,9 +95,8 @@ _function_kwargs: dict = {
         "/root/.cache/huggingface": _r.hf_vol,
         "/root/.cache/vllm": _r.vllm_vol,
     },
+    "secrets": _function_secrets,
 }
-if _r.auth_secret_name:
-    _function_kwargs["secrets"] = [modal.Secret.from_name(_r.auth_secret_name)]
 
 
 @app.function(**_function_kwargs)
