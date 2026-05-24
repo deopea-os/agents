@@ -8,3 +8,10 @@ repos:
         pass_filenames: false
         always_run: true
         stages: [pre-commit]
+      - id: generate-config
+        name: Generate Python config from schema
+        entry: bash -c 'python scripts/generate_config.py && git diff --quiet models/_generated.py || git add models/_generated.py'
+        language: system
+        pass_filenames: false
+        files: ^schemas/model-config\.schema\.json$
+        stages: [pre-commit]

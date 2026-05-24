@@ -18,11 +18,19 @@ class AppResources:
     hf_vol: modal.Volume
     vllm_vol: modal.Volume
     cmd: list[str]
-    gpu: str
+    gpu: str | list[str]
     scaledown: int
     timeout: int
     max_inputs: int
     port: int = VLLM_PORT
+
+
+def _modal_gpu(config: ModelConfig) -> str | list[str]:
+    """Build Modal gpu= argument from config (string or fallback list)."""
+    gpu_type = config.gpu.type
+    if isinstance(gpu_type, list):
+        return gpu_type
+    return f"{gpu_type}:{config.gpu.count}"
 
 
 def build_vllm_cmd(config: ModelConfig) -> list[str]:
@@ -75,7 +83,7 @@ def prepare_app(config: ModelConfig) -> AppResources:
             config.volumes.vllm_cache, create_if_missing=True
         ),
         cmd=build_vllm_cmd(config),
-        gpu=f"{config.gpu.type}:{config.gpu.count}",
+        gpu=_modal_gpu(config),
         scaledown=config.scaling.scaledown_window_minutes * MINUTES,
         timeout=config.scaling.timeout_minutes * MINUTES,
         max_inputs=config.scaling.max_concurrent_inputs,

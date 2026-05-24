@@ -18,7 +18,18 @@ dependencies = [
 dev = [
     "ruff>=0.9.0",
     "pre-commit>=4.0.0",
+    "datamodel-code-generator>=0.57.0",
 ]
+
+[tool.datamodel-codegen]
+input = "schemas/model-config.schema.json"
+input-file-type = "jsonschema"
+output = "models/_generated.py"
+output-model-type = "pydantic_v2.BaseModel"
+use-title-as-name = true
+target-python-version = "3.11"
+use-union-operator = true
+field-constraints = true
 
 [project.scripts]
 agents = "cli:main"

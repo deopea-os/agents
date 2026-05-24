@@ -6,6 +6,12 @@ from pathlib import Path
 
 _ROOT = Path(__file__).parent
 
+# Editable installs only map top-level packages declared at install time; ensure
+# `scripts/` is importable when running the `agents` console script.
+_root_str = str(_ROOT)
+if _root_str not in sys.path:
+    sys.path.insert(0, _root_str)
+
 
 def _resolve_config(name: str) -> None:
     config_path = _ROOT / "configs" / f"{name}.yaml"
@@ -54,9 +60,31 @@ def _cmd_generate_docs(args: argparse.Namespace) -> None:
             print("README.md is up to date.")
     else:
         if changed:
-            print(f"Updated README.md")
+            print("Updated README.md")
         else:
             print("README.md is already up to date. No changes made.")
+
+
+def _cmd_generate_config(args: argparse.Namespace) -> None:
+    from scripts.generate_config import generate_config
+
+    changed = generate_config(check=args.check)
+
+    if args.check:
+        if changed:
+            print(
+                "models/_generated.py is out of date. "
+                "Run 'agents generate-config' to update.",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        else:
+            print("models/_generated.py is up to date.")
+    else:
+        if changed:
+            print("Updated models/_generated.py")
+        else:
+            print("models/_generated.py is already up to date. No changes made.")
 
 
 def main() -> None:
@@ -82,6 +110,16 @@ def main() -> None:
         help="Exit non-zero if README is out of date (for CI)",
     )
 
+    config_p = sub.add_parser(
+        "generate-config",
+        help="Regenerate models/_generated.py from the JSON schema",
+    )
+    config_p.add_argument(
+        "--check",
+        action="store_true",
+        help="Exit non-zero if generated config is out of date (for CI)",
+    )
+
     args = parser.parse_args()
 
     if args.command == "deploy":
@@ -90,6 +128,8 @@ def main() -> None:
         _cmd_run(args)
     elif args.command == "generate-docs":
         _cmd_generate_docs(args)
+    elif args.command == "generate-config":
+        _cmd_generate_config(args)
 
 
 if __name__ == "__main__":
