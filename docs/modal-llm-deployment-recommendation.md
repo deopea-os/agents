@@ -158,9 +158,16 @@ Point Copilot BYOK / gateway at the Modal URL; use **`coder-fast`**, **`coder-da
 
 ## Cold-start and ops tuning
 
-Shared across tiers (already in configs):
+`scaledown_window_minutes` trades idle GPU time after the last request against how often vLLM cold-starts (see [Modal cold starts](https://modal.com/docs/guide/cold-start)). Shorter windows only help when gaps between requests stay below the window.
 
-- `scaledown_window_minutes: 2`
+| Tier | Config | `scaledown_window_minutes` | Rationale |
+|------|--------|---------------------------|-----------|
+| Fast | `qwen3_coder_30b_a3b_l40s` | **5** | Lighter tier for plans/subagents; fewer sessions, shorter warm tail |
+| Daily | `qwen3_coder_next_h200_daily` | **10** | Primary interactive driver; longer gaps between Copilot turns |
+| Max | `qwen3_coder_next_h200` | **10** | Same as Daily; long-context sessions |
+
+Also in configs:
+
 - `max_concurrent_inputs: 4`
 - `--enable-prefix-caching` where supported
 
